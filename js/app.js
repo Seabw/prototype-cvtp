@@ -264,32 +264,47 @@ class CashVortexApp {
         });
       }
 
-      // Step 3: Render Landed Symbols on Grid
-      this.visualGrid.render(this.engine.grid);
+      // Step 3: Render Landed Symbols on Grid (Initial pre-modifier state)
+      if (telemetry.preActionGrid) {
+        this.visualGrid.render(telemetry.preActionGrid);
+      } else {
+        this.visualGrid.render(this.engine.grid);
+      }
       this.soundSynth.playCoinLand();
-      await new Promise(r => setTimeout(r, 300 * speedMult));
+      await new Promise(r => setTimeout(r, 350 * speedMult));
 
-      // Step 4: Strikes Execution
+      // Step 4: Strikes Execution (Flying energy boost & count-up)
       if (telemetry.strikeActions && telemetry.strikeActions.length > 0) {
         for (const strike of telemetry.strikeActions) {
-          this.setStatus(`STRIKE ACTIVATED! ADDING CASH...`);
-          this.soundSynth.playStrikeZap();
-          this.visualGrid.showStrikeBeam(strike.strikeCell.row, strike.strikeCell.col, strike.affectedCells);
-          this.visualGrid.render(this.engine.grid);
-          await new Promise(r => setTimeout(r, 450 * speedMult));
+          const tier = strike.strikeCell.type.replace('Strike', '').toUpperCase();
+          this.setStatus(`⚡ ${tier} STRIKE ACTIVATED! APPLYING +${strike.strikeCell.value.toFixed(1)}x TO TARGETS...`);
+          await this.visualGrid.animateStrikeFlyAndCountUp(
+            strike,
+            this.dom.coinFlightContainer,
+            this.soundSynth,
+            speedMult
+          );
+          await new Promise(r => setTimeout(r, 200 * speedMult));
         }
       }
 
-      // Step 5: Vortexes Execution
+      // Step 5: Vortexes Execution (Coins fly in & vortex counts up)
       if (telemetry.vortexActions && telemetry.vortexActions.length > 0) {
         for (const vortex of telemetry.vortexActions) {
-          this.setStatus(`VORTEX ACTIVATED! GATHERING VALUES...`);
-          this.soundSynth.playVortexWhoosh();
-          this.visualGrid.showVortexSuction(vortex.vortexCell.row, vortex.vortexCell.col, vortex.collectedCells);
-          this.visualGrid.render(this.engine.grid);
-          await new Promise(r => setTimeout(r, 500 * speedMult));
+          const tier = vortex.vortexCell.type.replace('Vortex', '').toUpperCase();
+          this.setStatus(`🌀 ${tier} VORTEX ACTIVATED! GATHERING CASH VALUES (${vortex.finalValue.toFixed(1)}x)...`);
+          await this.visualGrid.animateVortexSuctionAndCountUp(
+            vortex,
+            this.dom.coinFlightContainer,
+            this.soundSynth,
+            speedMult
+          );
+          await new Promise(r => setTimeout(r, 200 * speedMult));
         }
       }
+
+      // Final synchronization to ensure exact mathematical grid values
+      this.visualGrid.render(this.engine.grid);
 
       // Step 6: Life Cycle Resets
       if (telemetry.resets && telemetry.resets.length > 0) {

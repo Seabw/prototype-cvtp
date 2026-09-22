@@ -178,15 +178,18 @@ export class VisualGrid {
   }
 
   showStrikeBeam(fromR, fromC, targets) {
-    const fromElem = this.cellElements[fromR][fromC];
+    const fromElem = this.cellElements[fromR]?.[fromC];
+    if (!fromElem) return;
     fromElem.classList.add('strike-firing');
 
     targets.forEach(t => {
-      const targetElem = this.cellElements[t.row][t.col];
-      targetElem.classList.add('strike-hit');
-      setTimeout(() => {
-        targetElem.classList.remove('strike-hit');
-      }, 700);
+      const targetElem = this.cellElements[t.row]?.[t.col];
+      if (targetElem) {
+        targetElem.classList.add('strike-hit');
+        setTimeout(() => {
+          targetElem.classList.remove('strike-hit');
+        }, 700);
+      }
     });
 
     setTimeout(() => {
@@ -195,15 +198,18 @@ export class VisualGrid {
   }
 
   showVortexSuction(fromR, fromC, sources) {
-    const vortexElem = this.cellElements[fromR][fromC];
+    const vortexElem = this.cellElements[fromR]?.[fromC];
+    if (!vortexElem) return;
     vortexElem.classList.add('vortex-sucking');
 
     sources.forEach(s => {
-      const sourceElem = this.cellElements[s.row][s.col];
-      sourceElem.classList.add('vortex-absorbed');
-      setTimeout(() => {
-        sourceElem.classList.remove('vortex-absorbed');
-      }, 700);
+      const sourceElem = this.cellElements[s.row]?.[s.col];
+      if (sourceElem) {
+        sourceElem.classList.add('vortex-absorbed');
+        setTimeout(() => {
+          sourceElem.classList.remove('vortex-absorbed');
+        }, 700);
+      }
     });
 
     setTimeout(() => {
@@ -211,13 +217,285 @@ export class VisualGrid {
     }, 700);
   }
 
+  async animateStrikeFlyAndCountUp(strikeAction, containerElement, soundSynth, speedMult = 1.0) {
+    if (!strikeAction || !strikeAction.strikeCell) return;
+    const { strikeCell, affectedCells } = strikeAction;
+    const fromElem = this.cellElements[strikeCell.row]?.[strikeCell.col];
+    if (!fromElem) return;
+
+    fromElem.classList.add('strike-firing');
+
+    if (!affectedCells || affectedCells.length === 0) {
+      if (soundSynth) soundSynth.playStrikeZap();
+      await new Promise(r => setTimeout(r, 350 * speedMult));
+      fromElem.classList.remove('strike-firing');
+      return;
+    }
+
+    if (soundSynth) soundSynth.playStrikeZap();
+
+    const startRect = fromElem.getBoundingClientRect();
+    const startX = startRect.left + startRect.width / 2;
+    const startY = startRect.top + startRect.height / 2;
+
+    const tier = strikeCell.type === SymbolType.MiniStrike
+      ? 'mini'
+      : strikeCell.type === SymbolType.MegaStrike
+      ? 'mega'
+      : 'ultra';
+
+    const flightDuration = Math.max(160, 420 * speedMult);
+    const countUpDuration = Math.max(150, 360 * speedMult);
+
+    const promises = affectedCells.map((target, idx) => {
+      return new Promise(resolve => {
+        const targetElem = this.cellElements[target.row]?.[target.col];
+        if (!targetElem || !containerElement) {
+          resolve();
+          return;
+        }
+
+        const endRect = targetElem.getBoundingClientRect();
+        const endX = endRect.left + endRect.width / 2;
+        const endY = endRect.top + endRect.height / 2;
+
+        const particle = document.createElement('div');
+        particle.className = `flying-strike-particle strike-${tier}`;
+        particle.innerHTML = `
+          <span class="strike-spark-bolt">⚡</span>
+          <span class="strike-val-tag">+${strikeCell.value.toFixed(1)}x</span>
+        `;
+        particle.style.left = `${startX}px`;
+        particle.style.top = `${startY}px`;
+        containerElement.appendChild(particle);
+
+        const startTime = performance.now();
+        const midX = (startX + endX) / 2 + (Math.random() - 0.5) * 30;
+        const midY = (startY + endY) / 2 - 35;
+
+        const animate = currentTime => {
+          try {
+            const elapsed = (currentTime || performance.now()) - startTime;
+            const t = Math.min(1, Math.max(0, elapsed / flightDuration));
+
+            const x = Math.pow(1 - t, 2) * startX + 2 * (1 - t) * t * midX + Math.pow(t, 2) * endX;
+            const y = Math.pow(1 - t, 2) * startY + 2 * (1 - t) * t * midY + Math.pow(t, 2) * endY;
+            const scale = 0.85 + Math.sin(t * Math.PI) * 0.45;
+
+            particle.style.transform = `translate(-50%, -50%) translate(${x - startX}px, ${y - startY}px) scale(${scale})`;
+
+            if (t < 1) {
+              requestAnimationFrame(animate);
+            } else {
+              particle.remove();
+
+              // Impact flash & pulse on target cell
+              targetElem.classList.add('strike-hit', 'val-countup-pop');
+              if (soundSynth) soundSynth.playCoinLand();
+
+              // Smooth numeric count-up
+              const valElem = targetElem.querySelector('.coin-value');
+              if (valElem) {
+                const startVal = target.prevVal;
+                const endVal = target.newVal;
+                const countStartTime = performance.now();
+
+                const countStep = nowTime => {
+                  const countElapsed = (nowTime || performance.now()) - countStartTime;
+                  const progress = Math.min(1, Math.max(0, countElapsed / countUpDuration));
+                  const currentVal = startVal + (endVal - startVal) * progress;
+                  valElem.innerText = `${currentVal.toFixed(1)}x`;
+
+                  if (progress < 1) {
+                    requestAnimationFrame(countStep);
+                  } else {
+                    valElem.innerText = `${endVal.toFixed(1)}x`;
+                    setTimeout(() => {
+                      targetElem.classList.remove('strike-hit', 'val-countup-pop');
+                      resolve();
+                    }, 120 * speedMult);
+                  }
+                };
+                requestAnimationFrame(countStep);
+              } else {
+                setTimeout(() => {
+                  targetElem.classList.remove('strike-hit', 'val-countup-pop');
+                  resolve();
+                }, 120 * speedMult);
+              }
+            }
+          } catch (e) {
+            particle.remove();
+            resolve();
+          }
+        };
+
+        // Slight stagger per target
+        setTimeout(() => {
+          requestAnimationFrame(animate);
+        }, idx * 25 * speedMult);
+      });
+    });
+
+    // Safety timeout in case of any animation frame edge case
+    const safetyPromise = new Promise(resolve => setTimeout(resolve, flightDuration + countUpDuration + 500));
+    await Promise.race([Promise.all(promises), safetyPromise]);
+
+    fromElem.classList.remove('strike-firing');
+  }
+
+  async animateVortexSuctionAndCountUp(vortexAction, containerElement, soundSynth, speedMult = 1.0) {
+    if (!vortexAction || !vortexAction.vortexCell) return;
+    const { vortexCell, collectedCells, finalValue } = vortexAction;
+    const vortexElem = this.cellElements[vortexCell.row]?.[vortexCell.col];
+    if (!vortexElem) return;
+
+    vortexElem.classList.add('vortex-sucking');
+
+    // Ensure vortex cell is initially showing its basePay
+    const vortexValElem = vortexElem.querySelector('.coin-value');
+    if (vortexValElem) {
+      vortexValElem.innerText = `${vortexCell.basePay.toFixed(1)}x`;
+    }
+
+    if (!collectedCells || collectedCells.length === 0) {
+      if (soundSynth) soundSynth.playVortexWhoosh();
+      await new Promise(r => setTimeout(r, 350 * speedMult));
+      vortexElem.classList.remove('vortex-sucking');
+      return;
+    }
+
+    if (soundSynth) soundSynth.playVortexWhoosh();
+
+    const destRect = vortexElem.getBoundingClientRect();
+    const endX = destRect.left + destRect.width / 2;
+    const endY = destRect.top + destRect.height / 2;
+
+    const tier = vortexCell.type === SymbolType.MiniVortex
+      ? 'mini'
+      : vortexCell.type === SymbolType.MegaVortex
+      ? 'mega'
+      : 'ultra';
+
+    const flightDuration = Math.max(180, 440 * speedMult);
+    const countUpDuration = Math.max(160, 400 * speedMult);
+
+    // Source coins pulse with absorption glow while staying fully intact on board
+    collectedCells.forEach(source => {
+      const sourceElem = this.cellElements[source.row]?.[source.col];
+      if (sourceElem) {
+        sourceElem.classList.add('vortex-absorbed');
+      }
+    });
+
+    // Launch flying cash particles from each collected cell into vortex center
+    const flightPromises = collectedCells.map((source, idx) => {
+      return new Promise(resolve => {
+        const sourceElem = this.cellElements[source.row]?.[source.col];
+        if (!sourceElem || !containerElement) {
+          resolve();
+          return;
+        }
+
+        const startRect = sourceElem.getBoundingClientRect();
+        const startX = startRect.left + startRect.width / 2;
+        const startY = startRect.top + startRect.height / 2;
+
+        const particle = document.createElement('div');
+        particle.className = `flying-vortex-particle vortex-${tier}`;
+        particle.innerHTML = `
+          <span class="vortex-spark-swirl">🌀</span>
+          <span class="vortex-val-tag">${source.val.toFixed(1)}x</span>
+        `;
+        particle.style.left = `${startX}px`;
+        particle.style.top = `${startY}px`;
+        containerElement.appendChild(particle);
+
+        const startTime = performance.now();
+        const midX = (startX + endX) / 2 + (Math.random() - 0.5) * 40;
+        const midY = (startY + endY) / 2 - 25;
+
+        const animate = currentTime => {
+          try {
+            const elapsed = (currentTime || performance.now()) - startTime;
+            const t = Math.min(1, Math.max(0, elapsed / flightDuration));
+
+            const x = Math.pow(1 - t, 2) * startX + 2 * (1 - t) * t * midX + Math.pow(t, 2) * endX;
+            const y = Math.pow(1 - t, 2) * startY + 2 * (1 - t) * t * midY + Math.pow(t, 2) * endY;
+            const scale = 1.0 - t * 0.35;
+            const rotate = t * 720;
+
+            particle.style.transform = `translate(-50%, -50%) translate(${x - startX}px, ${y - startY}px) scale(${scale}) rotate(${rotate}deg)`;
+
+            if (t < 1) {
+              requestAnimationFrame(animate);
+            } else {
+              particle.remove();
+              resolve();
+            }
+          } catch (e) {
+            particle.remove();
+            resolve();
+          }
+        };
+
+        setTimeout(() => {
+          requestAnimationFrame(animate);
+        }, idx * 35 * speedMult);
+      });
+    });
+
+    const flightSafety = new Promise(resolve => setTimeout(resolve, flightDuration + collectedCells.length * 40 + 400));
+    await Promise.race([Promise.all(flightPromises), flightSafety]);
+
+    // Clean up source cell highlights (coins remain on grid!)
+    collectedCells.forEach(source => {
+      const sourceElem = this.cellElements[source.row]?.[source.col];
+      if (sourceElem) {
+        sourceElem.classList.remove('vortex-absorbed');
+      }
+    });
+
+    // Vortex absorption impact and count-up
+    vortexElem.classList.add('vortex-pulse-hit', 'val-countup-pop');
+    if (soundSynth) soundSynth.playPotDing();
+
+    if (vortexValElem) {
+      const startVal = vortexCell.basePay;
+      const endVal = finalValue;
+      const countStartTime = performance.now();
+
+      await new Promise(resolve => {
+        const countStep = nowTime => {
+          const countElapsed = (nowTime || performance.now()) - countStartTime;
+          const progress = Math.min(1, Math.max(0, countElapsed / countUpDuration));
+          const currentVal = startVal + (endVal - startVal) * progress;
+          vortexValElem.innerText = `${currentVal.toFixed(1)}x`;
+
+          if (progress < 1) {
+            requestAnimationFrame(countStep);
+          } else {
+            vortexValElem.innerText = `${endVal.toFixed(1)}x`;
+            resolve();
+          }
+        };
+        requestAnimationFrame(countStep);
+      });
+    }
+
+    await new Promise(r => setTimeout(r, 160 * speedMult));
+    vortexElem.classList.remove('vortex-sucking', 'vortex-pulse-hit', 'val-countup-pop');
+  }
+
   showLifeReset(resets) {
     resets.forEach(r => {
-      const elem = this.cellElements[r.row][r.col];
-      elem.classList.add('life-reset-glow');
-      setTimeout(() => {
-        elem.classList.remove('life-reset-glow');
-      }, 800);
+      const elem = this.cellElements[r.row]?.[r.col];
+      if (elem) {
+        elem.classList.add('life-reset-glow');
+        setTimeout(() => {
+          elem.classList.remove('life-reset-glow');
+        }, 800);
+      }
     });
   }
 

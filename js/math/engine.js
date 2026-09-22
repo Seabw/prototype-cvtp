@@ -272,6 +272,9 @@ export class CashVortexSlotEngine {
         newlyLandedCells.push(cell);
       }
 
+      // Snapshot grid before Wheel bonus modifiers
+      telemetry.preActionGrid = this.grid.map(row => row.map(c => c.clone()));
+
       // Play out triggered wheel bonus
       this.executePotWheelBonus(triggeredWheel, telemetry);
     } else {
@@ -310,13 +313,13 @@ export class CashVortexSlotEngine {
           cell.cashValue = jpDef.multiplier;
         } else if (sName.toLowerCase().includes('mini vortex')) {
           cell.type = SymbolType.MiniVortex;
-          cell.cashValue = 0.0;
+          cell.cashValue = this.config.miniVortexBasePay;
         } else if (sName.toLowerCase().includes('mega vortex')) {
           cell.type = SymbolType.MegaVortex;
-          cell.cashValue = 0.0;
+          cell.cashValue = this.config.megaVortexBasePay;
         } else if (sName.toLowerCase().includes('ultra vortex')) {
           cell.type = SymbolType.UltraVortex;
-          cell.cashValue = 0.0;
+          cell.cashValue = this.config.ultraVortexBasePay;
         } else if (sName.toLowerCase().includes('mini strike')) {
           cell.type = SymbolType.MiniStrike;
           cell.cashValue = this.sampleCashStrikeValue();
@@ -369,6 +372,9 @@ export class CashVortexSlotEngine {
         cell.justLanded = true;
         newlyLandedCells.push(cell);
       }
+
+      // Snapshot grid before Strikes & Vortexes modify values
+      telemetry.preActionGrid = this.grid.map(row => row.map(c => c.clone()));
 
       // Execute Strikes & Vortexes
       this.executeSpecialSymbolActions(this.grid, newlyLandedCells, telemetry);

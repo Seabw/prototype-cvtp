@@ -335,3 +335,107 @@
   font-weight: 900;
   color: #4caf50;
 }
+
+/* ==========================================================================
+   Mobile Responsive Adaptations for Wheels & Modals (Screen width <= 640px)
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* Top 3 Pots Container */
+  .top-pots-container {
+    gap: 6px;
+  }
+
+  .wheel-pot-card {
+    padding: 6px 8px;
+    gap: 6px;
+    border-radius: 8px;
+  }
+
+  .pot-icon-wrapper {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    font-size: 14px;
+  }
+
+  .pot-name {
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1.1;
+  }
+
+  .pot-meta {
+    display: none;
+  }
+
+  .pot-coins-badge {
+    font-size: 11px;
+    padding: 2px 5px;
+    border-radius: 4px;
+  }
+
+  /* Wheel Modal */
+  .wheel-modal-dialog {
+    padding: 14px 10px;
+    max-width: 95vw;
+    border-radius: 18px;
+  }
+
+  .wheel-modal-title {
+    font-size: 20px;
+    margin-bottom: 8px;
+  }
+
+  .wheel-canvas-wrapper {
+    width: min(80vw, 320px);
+    height: min(80vw, 320px);
+  }
+
+  /* Lock & Slingo Bonus Modal */
+  .bonus-modal-dialog {
+    padding: 12px;
+    width: 96vw;
+    max-height: 94vh;
+    border-radius: 16px;
+  }
+
+  .bonus-title {
+    font-size: 16px;
+  }
+
+  .bonus-main-layout {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .bonus-grid-wrapper {
+    max-width: 280px;
+    margin: 0 auto;
+  }
+
+  .slingo-ladder-container {
+    max-height: 150px;
+  }
+
+  .ladder-header {
+    font-size: 9px;
+    padding-bottom: 4px;
+  }
+
+  .ladder-step {
+    padding: 3px 6px;
+    font-size: 10px;
+  }
+
+  .bonus-footer {
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    text-align: center;
+  }
+
+  .bonus-win-amount {
+    font-size: 18px;
+  }
+}
+

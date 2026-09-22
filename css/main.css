@@ -396,11 +396,129 @@ body::before {
   border-radius: 4px;
 }
 
-.log-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 4px;
-}
-
 .log-win.win { color: #4caf50; font-weight: 700; }
 .log-alert { color: #00e5ff; font-weight: 700; margin-top: 4px; }
+
+/* ==========================================================================
+   Mobile Responsive Adaptations (Screen width <= 640px)
+   ========================================================================== */
+@media (max-width: 640px) {
+  .game-container {
+    padding: 8px 10px 16px;
+    gap: 10px;
+  }
+
+  /* Header */
+  .game-header {
+    padding: 8px 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .title-group {
+    gap: 8px;
+  }
+
+  .game-title {
+    font-size: 18px;
+    letter-spacing: 1px;
+  }
+
+  .rtp-tag {
+    font-size: 10px;
+    padding: 2px 5px;
+  }
+
+  .header-controls {
+    gap: 6px;
+  }
+
+  .icon-btn {
+    padding: 5px 8px;
+    font-size: 11px;
+    border-radius: 6px;
+  }
+
+  /* Status Banner */
+  .status-banner {
+    font-size: 11px;
+    padding: 6px 10px;
+    min-height: 32px;
+    letter-spacing: 0.8px;
+  }
+
+  /* Bottom Game HUD - Stacked Touch Friendly Layout */
+  .game-hud {
+    flex-direction: column;
+    padding: 12px 14px;
+    gap: 12px;
+  }
+
+  .hud-group {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+  }
+
+  .hud-panel {
+    align-items: center;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.25);
+    padding: 6px 4px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .hud-panel .label {
+    font-size: 9px;
+    letter-spacing: 0.5px;
+  }
+
+  .hud-panel .value {
+    font-size: 14px;
+  }
+
+  .center-win {
+    width: 100%;
+  }
+
+  .bet-stepper {
+    gap: 4px;
+  }
+
+  .step-btn {
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+  }
+
+  /* Bottom Controls Row: Auto Spin + Big Spin Button */
+  .hud-controls {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+  }
+
+  .secondary-btn {
+    flex: 1;
+    padding: 12px 10px;
+    font-size: 13px;
+    border-radius: 25px;
+  }
+
+  .spin-btn {
+    flex: 2;
+    padding: 12px 20px;
+    font-size: 18px;
+    letter-spacing: 1.5px;
+    border-radius: 25px;
+  }
+
+  /* Debug Drawer Full-width on Mobile */
+  .debug-drawer {
+    width: 100vw;
+    max-width: 100vw;
+  }
+}
+

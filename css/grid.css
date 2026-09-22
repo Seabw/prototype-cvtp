@@ -342,3 +342,122 @@
   transform: scale(1.04);
   z-index: 5;
 }
+
+/* ==========================================================================
+   Mobile Responsive Adaptations for Grid (Screen width <= 640px)
+   ========================================================================== */
+@media (max-width: 640px) {
+  .grid-wrapper {
+    padding: 6px;
+    border-radius: 12px;
+    border-width: 2px;
+  }
+
+  .slot-grid {
+    gap: 5px;
+  }
+
+  .grid-cell {
+    border-radius: 8px;
+  }
+
+  .cell-content {
+    padding: 2px;
+  }
+
+  .empty-marker {
+    font-size: 18px;
+  }
+
+  /* Center Star */
+  .star-icon {
+    font-size: 20px;
+    margin-bottom: 0px;
+  }
+
+  .center-label {
+    font-size: 7px;
+    letter-spacing: 0.3px;
+  }
+
+  .symbol-sub {
+    font-size: 5.5px;
+    letter-spacing: 0.5px;
+  }
+
+  /* Life Badge */
+  .life-badge {
+    top: 3px;
+    right: 3px;
+    padding: 1px 3px;
+    gap: 2px;
+    border-radius: 6px;
+  }
+
+  .life-dot {
+    width: 4px;
+    height: 4px;
+  }
+
+  /* Expiry Pill */
+  .expiry-pill {
+    bottom: 2px;
+    font-size: 7px;
+    padding: 1px 4px;
+    border-radius: 3px;
+  }
+
+  /* Cash Coin */
+  .coin-disc {
+    width: 22px;
+    height: 22px;
+    margin-bottom: 2px;
+  }
+
+  .coin-symbol {
+    font-size: 13px;
+  }
+
+  .coin-value {
+    font-size: 11px;
+    letter-spacing: -0.2px;
+  }
+
+  /* Jackpot Coin */
+  .jp-badge {
+    font-size: 7.5px;
+    padding: 1px 4px;
+    margin-bottom: 2px;
+  }
+
+  .isolation-shield {
+    top: 2px;
+    left: 2px;
+    font-size: 8px;
+  }
+
+  /* Strikes */
+  .strike-bolt {
+    font-size: 18px;
+    margin-bottom: 1px;
+  }
+
+  .strike-title {
+    font-size: 7px;
+    letter-spacing: 0.3px;
+    margin-bottom: 1px;
+  }
+
+  /* Vortexes */
+  .vortex-core {
+    font-size: 18px;
+    margin-bottom: 1px;
+  }
+
+  .vortex-title {
+    font-size: 7px;
+    letter-spacing: 0.3px;
+    margin-bottom: 1px;
+  }
+}
+

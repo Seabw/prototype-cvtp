@@ -11,16 +11,16 @@ export class DebugPanel {
     this.bindEvents();
   }
 
-  bindEvents() {
-    const toggleBtn = document.getElementById('debug-toggle-btn');
-    if (toggleBtn) {
-      toggleBtn.addEventListener('click', () => {
-        this.isOpen = !this.isOpen;
-        this.panel.classList.toggle('open', this.isOpen);
-      });
+  toggle() {
+    this.isOpen = !this.isOpen;
+    if (this.panel) {
+      this.panel.classList.toggle('open', this.isOpen);
     }
+    return this.isOpen;
+  }
 
-    const closeBtn = this.panel.querySelector('.debug-close-btn');
+  bindEvents() {
+    const closeBtn = this.panel?.querySelector('.debug-close-btn');
     if (closeBtn) {
       closeBtn.addEventListener('click', () => {
         this.isOpen = false;

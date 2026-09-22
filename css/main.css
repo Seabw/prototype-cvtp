@@ -442,77 +442,102 @@ body::before {
   /* Status Banner */
   .status-banner {
     font-size: 11px;
-    padding: 6px 10px;
-    min-height: 32px;
-    letter-spacing: 0.8px;
+    padding: 5px 8px;
+    min-height: 28px;
+    letter-spacing: 0.6px;
   }
 
-  /* Bottom Game HUD - Stacked Touch Friendly Layout */
+  /* Bottom Game HUD - Single Row Stats + Lifted Spin Controls */
   .game-hud {
-    flex-direction: column;
-    padding: 12px 14px;
-    gap: 12px;
+    display: grid;
+    grid-template-columns: 1fr 1.15fr 1fr;
+    grid-template-areas:
+      "balance bet win"
+      "controls controls controls";
+    padding: 8px 10px;
+    gap: 6px;
+    border-radius: var(--border-radius-md);
   }
 
   .hud-group {
-    width: 100%;
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 8px;
+    display: contents;
   }
 
   .hud-panel {
+    display: flex;
+    flex-direction: column;
     align-items: center;
+    justify-content: center;
     text-align: center;
-    background: rgba(0, 0, 0, 0.25);
-    padding: 6px 4px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 5px 3px;
     border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    min-width: 0;
+    gap: 1px;
   }
 
   .hud-panel .label {
-    font-size: 9px;
-    letter-spacing: 0.5px;
+    font-size: 8.5px;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    color: var(--text-dim);
   }
 
   .hud-panel .value {
-    font-size: 14px;
+    font-size: 13.5px;
+    font-weight: 700;
+    white-space: nowrap;
   }
 
   .center-win {
-    width: 100%;
+    width: auto;
+    grid-area: win;
   }
 
   .bet-stepper {
-    gap: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    width: 100%;
+  }
+
+  .bet-stepper .value {
+    font-size: 13px;
   }
 
   .step-btn {
-    width: 24px;
-    height: 24px;
-    font-size: 14px;
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    font-size: 12px;
+    border-radius: 50%;
+    padding: 0;
   }
 
-  /* Bottom Controls Row: Auto Spin + Big Spin Button */
+  /* Bottom Controls Row: Auto Spin + Lifted Spin Button */
   .hud-controls {
-    width: 100%;
+    grid-column: 1 / -1;
     display: flex;
-    gap: 8px;
+    gap: 6px;
+    width: 100%;
+    margin-top: 2px;
   }
 
   .secondary-btn {
     flex: 1;
-    padding: 12px 10px;
-    font-size: 13px;
-    border-radius: 25px;
+    padding: 10px 8px;
+    font-size: 12px;
+    border-radius: 20px;
   }
 
   .spin-btn {
     flex: 2;
-    padding: 12px 20px;
-    font-size: 18px;
+    padding: 10px 18px;
+    font-size: 17px;
     letter-spacing: 1.5px;
-    border-radius: 25px;
+    border-radius: 20px;
   }
 
   /* Debug Drawer Full-width on Mobile */

@@ -1,0 +1,279 @@
+/* 5x5 Reel Matrix */
+.grid-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  max-width: 620px;
+  margin: 0 auto;
+  background: rgba(11, 14, 32, 0.9);
+  border: 3px solid #2d3561;
+  border-radius: var(--border-radius-lg);
+  padding: 12px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(0, 0, 0, 0.8);
+}
+
+.slot-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+}
+
+.slingo-svg-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Individual Cell Card */
+.grid-cell {
+  background: rgba(22, 27, 58, 0.8);
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--border-radius-md);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s;
+}
+
+.cell-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 4px;
+  position: relative;
+}
+
+.empty-marker {
+  font-size: 24px;
+  color: rgba(255, 255, 255, 0.12);
+}
+
+/* Central Wild Star Cell */
+.grid-cell.center-star-cell {
+  background: radial-gradient(circle, #3d2f09 0%, #1a1608 100%);
+  border: 2px solid #ffd700;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.4), inset 0 0 15px rgba(255, 215, 0, 0.3);
+  animation: starPulse 2.5s infinite alternate ease-in-out;
+}
+
+.star-icon {
+  font-size: 34px;
+  color: #ffd700;
+  filter: drop-shadow(0 0 10px #ffea70);
+  margin-bottom: 2px;
+}
+
+.center-label {
+  font-size: 10px;
+  font-weight: 900;
+  color: #ffd700;
+  letter-spacing: 0.8px;
+}
+
+.symbol-sub {
+  font-size: 8px;
+  font-weight: 700;
+  color: #c9b04f;
+  letter-spacing: 1px;
+}
+
+/* Life Badges (3 Hearts/Dots) */
+.life-badge {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: flex;
+  gap: 3px;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 2px 4px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.life-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.life-dot.active {
+  background: #00e676;
+  box-shadow: 0 0 6px #00e676;
+}
+
+.life-dot.spent {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Base Cash Coin */
+.symbol-cash-coin {
+  background: radial-gradient(circle at 35% 35%, #2a2c4e 0%, #131526 100%);
+  border: 1.5px solid #ffb703;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.coin-disc {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #ffe066, #d49000);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.8);
+  margin-bottom: 4px;
+}
+
+.coin-symbol {
+  font-size: 18px;
+  font-weight: 900;
+  color: #4a3200;
+}
+
+.coin-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.3px;
+}
+
+/* Jackpot Coins */
+.symbol-jackpot-coin {
+  position: relative;
+}
+
+.jp-badge {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-bottom: 4px;
+}
+
+.isolation-shield {
+  position: absolute;
+  top: 4px;
+  left: 5px;
+  font-size: 10px;
+}
+
+.symbol-jackpot-coin.jp-mini {
+  background: radial-gradient(circle, #3d1522 0%, #1f0b11 100%);
+  border: 1.5px solid #ff2a6d;
+  box-shadow: 0 0 15px rgba(255, 42, 109, 0.4);
+}
+.symbol-jackpot-coin.jp-mini .jp-badge { background: #ff2a6d; color: #fff; }
+
+.symbol-jackpot-coin.jp-mega {
+  background: radial-gradient(circle, #15223d 0%, #0b1320 100%);
+  border: 1.5px solid #00e5ff;
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+}
+.symbol-jackpot-coin.jp-mega .jp-badge { background: #00e5ff; color: #000; }
+
+.symbol-jackpot-coin.jp-ultra {
+  background: radial-gradient(circle, #3d3315 0%, #201a09 100%);
+  border: 2px solid #ffd700;
+  box-shadow: 0 0 25px rgba(255, 215, 0, 0.7);
+  animation: ultraGlow 1.8s infinite alternate;
+}
+.symbol-jackpot-coin.jp-ultra .jp-badge { background: #ffd700; color: #000; }
+
+/* Cash Strikes */
+.symbol-strike {
+  position: relative;
+}
+
+.strike-bolt {
+  font-size: 26px;
+  margin-bottom: 2px;
+}
+
+.strike-title {
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  margin-bottom: 2px;
+}
+
+.symbol-strike.strike-mini {
+  background: radial-gradient(circle, #0e3047 0%, #091724 100%);
+  border: 1.5px solid var(--cyan-strike);
+  box-shadow: 0 0 15px var(--cyan-glow);
+}
+.symbol-strike.strike-mini .strike-bolt { color: var(--cyan-strike); filter: drop-shadow(0 0 8px var(--cyan-strike)); }
+
+.symbol-strike.strike-mega {
+  background: radial-gradient(circle, #2d1645 0%, #150a21 100%);
+  border: 1.5px solid var(--purple-vortex);
+  box-shadow: 0 0 15px var(--purple-glow);
+}
+.symbol-strike.strike-mega .strike-bolt { color: var(--purple-vortex); filter: drop-shadow(0 0 8px var(--purple-vortex)); }
+
+.symbol-strike.strike-ultra {
+  background: radial-gradient(circle, #45340d 0%, #1f1705 100%);
+  border: 2px solid var(--gold-primary);
+  box-shadow: 0 0 20px var(--gold-glow);
+}
+.symbol-strike.strike-ultra .strike-bolt { color: var(--gold-primary); filter: drop-shadow(0 0 10px var(--gold-primary)); }
+
+/* Cash Vortexes */
+.symbol-vortex {
+  position: relative;
+}
+
+.vortex-core {
+  font-size: 26px;
+  margin-bottom: 2px;
+  animation: vortexSpin 4s linear infinite;
+}
+
+.vortex-title {
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  margin-bottom: 2px;
+}
+
+.symbol-vortex.vortex-mini {
+  background: radial-gradient(circle, #0b2f3d 0%, #071921 100%);
+  border: 1.5px solid var(--cyan-strike);
+}
+.symbol-vortex.vortex-mega {
+  background: radial-gradient(circle, #331342 0%, #190921 100%);
+  border: 1.5px solid var(--purple-vortex);
+}
+.symbol-vortex.vortex-ultra {
+  background: radial-gradient(circle, #3d300b 0%, #1f1805 100%);
+  border: 2px solid var(--gold-primary);
+}
+
+/* Winning Lines & Highlight States */
+.winning-slingo-line {
+  stroke: #ffd700;
+  stroke-width: 6;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 10px #ffd700);
+  animation: lineGlow 1s infinite alternate;
+}
+
+.line-win-cell {
+  border-color: #ffd700 !important;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.7) !important;
+  transform: scale(1.04);
+  z-index: 5;
+}

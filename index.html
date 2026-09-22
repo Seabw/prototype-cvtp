@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cash Vortex: Triple Power™ - Playable Prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/grid.css" />
+  <link rel="stylesheet" href="css/wheels.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+</head>
+<body>
+
+  <!-- Particle Layer for Flying Expired Coins -->
+  <div id="coin-flight-container" class="coin-flight-container"></div>
+
+  <!-- Main Game Container -->
+  <div class="game-container">
+    
+    <!-- Header Bar -->
+    <header class="game-header">
+      <div class="title-group">
+        <h1 class="game-title">CASH VORTEX</h1>
+        <span class="rtp-tag">RTP: 95.50%</span>
+      </div>
+      <div class="header-controls">
+        <button id="mute-btn" class="icon-btn" title="Toggle Game Audio">🔊 SOUND</button>
+        <button id="turbo-btn" class="icon-btn" title="Fast Animation Mode">⚡ TURBO</button>
+        <button id="debug-toggle-btn" class="icon-btn active" title="Open Math & QA Debug Inspector">🛠️ MATH INSPECTOR</button>
+      </div>
+    </header>
+
+    <!-- Top Reel-Top 3 Wheel Pots -->
+    <section class="top-pots-container">
+      <div id="pot-1" class="wheel-pot-card pot-1">
+        <div class="pot-icon-wrapper">🌀</div>
+        <div class="pot-info">
+          <span class="pot-name">POT 1: MINI WHEEL</span>
+          <span class="pot-meta">Weight 2,200/coin • Multipliers & Strikes</span>
+        </div>
+        <div id="pot-1-count" class="pot-coins-badge" title="Expired coins collected">0</div>
+      </div>
+
+      <div id="pot-2" class="wheel-pot-card pot-2">
+        <div class="pot-icon-wrapper">⚡</div>
+        <div class="pot-info">
+          <span class="pot-name">POT 2: MEGA WHEEL</span>
+          <span class="pot-meta">Weight 525/coin • Lock & Slingo</span>
+        </div>
+        <div id="pot-2-count" class="pot-coins-badge" title="Expired coins collected">0</div>
+      </div>
+
+      <div id="pot-3" class="wheel-pot-card pot-3">
+        <div class="pot-icon-wrapper">👑</div>
+        <div class="pot-info">
+          <span class="pot-name">POT 3: ULTRA WHEEL</span>
+          <span class="pot-meta">Weight 132/coin • 500x Ultra JP</span>
+        </div>
+        <div id="pot-3-count" class="pot-coins-badge" title="Expired coins collected">0</div>
+      </div>
+    </section>
+
+    <!-- Dynamic Status Banner -->
+    <div id="status-banner" class="status-banner">
+      READY TO PLAY. PRESS SPIN OR SPACEBAR!
+    </div>
+
+    <!-- 5x5 Main Reel Grid -->
+    <main class="grid-wrapper">
+      <div id="slot-grid" class="slot-grid"></div>
+      <svg id="slingo-svg-lines" class="slingo-svg-overlay"></svg>
+    </main>
+
+    <!-- Bottom HUD & Betting Controls -->
+    <footer class="game-hud">
+      <div class="hud-group">
+        <div class="hud-panel">
+          <span class="label">BALANCE</span>
+          <span id="balance-display" class="value">$1,000.00</span>
+        </div>
+        
+        <div class="hud-panel">
+          <span class="label">BET</span>
+          <div class="bet-stepper">
+            <button id="bet-down-btn" class="step-btn">−</button>
+            <span id="bet-display" class="value">$1.00</span>
+            <button id="bet-up-btn" class="step-btn">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="hud-panel center-win">
+        <span class="label">TOTAL WIN</span>
+        <span id="win-display" class="value text-green">$0.00</span>
+      </div>
+
+      <div class="hud-controls">
+        <button id="auto-btn" class="secondary-btn">AUTO SPIN</button>
+        <button id="spin-btn" class="spin-btn">SPIN</button>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Prize Wheel Canvas Modal -->
+  <div id="wheel-modal" class="overlay-modal hidden">
+    <div class="wheel-modal-dialog">
+      <h2 id="wheel-title" class="wheel-modal-title">MINI WHEEL</h2>
+      <div class="wheel-canvas-wrapper">
+        <canvas id="wheel-canvas" width="420" height="420"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lock & Slingo 5x5 Respin Bonus Modal -->
+  <div id="bonus-modal" class="overlay-modal hidden">
+    <div class="bonus-modal-dialog">
+      <div class="bonus-header">
+        <h2 class="bonus-title">LOCK & SLINGO™ BONUS</h2>
+        <div class="bonus-lives" title="Remaining Respin Lives">
+          <span class="life-heart alive">♥</span>
+          <span class="life-heart alive">♥</span>
+          <span class="life-heart alive">♥</span>
+        </div>
+      </div>
+
+      <div class="bonus-main-layout">
+        <div class="bonus-grid-wrapper">
+          <div class="bonus-grid"></div>
+        </div>
+
+        <div class="slingo-ladder-container">
+          <div class="ladder-header">
+            <span>SLINGOS</span>
+            <span>AWARDED LADDER PRIZE</span>
+          </div>
+          <div class="slingo-ladder"></div>
+        </div>
+      </div>
+
+      <div class="bonus-footer">
+        <div class="bonus-status-box">
+          <div class="bonus-status-text">RESPINS ACTIVE</div>
+          <div class="bonus-meta">Lines Completed: <strong class="bonus-lines-count">0 / 12</strong></div>
+        </div>
+        <div class="bonus-win-box">
+          <span class="label">TOTAL BONUS WIN:</span>
+          <span class="bonus-win-amount">$0.00</span>
+          <button class="bonus-exit-btn secondary-btn hidden">COLLECT & EXIT</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Big Win Celebration Overlay -->
+  <div id="win-celebration-banner" class="win-celebration-banner hidden">
+    <div class="win-mult-text">BIG WIN!</div>
+    <div class="win-amount-text">$0.00</div>
+  </div>
+
+  <!-- Collapsible Math & QA Debug Drawer -->
+  <aside id="debug-drawer" class="debug-drawer open">
+    <div class="debug-header">
+      <h3>MATH & QA INSPECTOR</h3>
+      <button class="debug-close-btn icon-btn">✕</button>
+    </div>
+    
+    <div class="debug-body">
+      <!-- Force Features -->
+      <div class="debug-section">
+        <h4>⚡ FORCE TRIGGER FEATURE</h4>
+        <div class="btn-grid">
+          <button class="debug-btn" data-force-feature="wheel1">Pot 1 (Mini Wheel)</button>
+          <button class="debug-btn" data-force-feature="wheel2">Pot 2 (Mega Wheel)</button>
+          <button class="debug-btn" data-force-feature="wheel3">Pot 3 (Ultra Wheel)</button>
+          <button class="debug-btn" data-force-feature="center">Center Wild Wheel</button>
+          <button class="debug-btn" data-force-feature="bonus">Lock & Slingo™</button>
+          <button class="debug-btn" data-force-feature="mini_strike">Mini Strike</button>
+          <button class="debug-btn" data-force-feature="mega_strike">Mega Strike</button>
+          <button class="debug-btn" data-force-feature="ultra_strike">Ultra Strike</button>
+          <button class="debug-btn" data-force-feature="mini_vortex">Mini Vortex</button>
+          <button class="debug-btn" data-force-feature="mega_vortex">Mega Vortex</button>
+          <button class="debug-btn" data-force-feature="ultra_vortex">Ultra Vortex</button>
+          <button class="debug-btn" data-force-feature="jackpot">Jackpot Coin</button>
+        </div>
+      </div>
+
+      <!-- Batch Math Simulation -->
+      <div class="debug-section">
+        <h4>📊 FAST BATCH SIMULATION (RTP TEST)</h4>
+        <div class="btn-grid">
+          <button class="debug-btn" data-batch-spins="100">100 Spins</button>
+          <button class="debug-btn" data-batch-spins="500">500 Spins</button>
+          <button class="debug-btn" data-batch-spins="1000">1,000 Spins</button>
+          <button class="debug-btn" data-batch-spins="5000">5,000 Spins</button>
+        </div>
+      </div>
+
+      <!-- Session Statistics -->
+      <div class="debug-section">
+        <h4>📈 SESSION TELEMETRY & RTP</h4>
+        <div class="debug-stats-content">
+          <div class="stat-row"><span>Total Spins:</span> <strong>0</strong></div>
+          <div class="stat-row"><span>Observed RTP:</span> <strong class="text-gold">0.00%</strong></div>
+          <div class="stat-row"><span>Hit Rate:</span> <strong>0.00%</strong></div>
+          <div class="stat-row"><span>Wheel 1 Hits:</span> <strong>0</strong></div>
+          <div class="stat-row"><span>Wheel 2 Hits:</span> <strong>0</strong></div>
+          <div class="stat-row"><span>Wheel 3 Hits:</span> <strong>0</strong></div>
+          <div class="stat-row"><span>Center Wild Hits:</span> <strong>0</strong></div>
+          <div class="stat-row"><span>Lock & Slingo Hits:</span> <strong>0</strong></div>
+        </div>
+      </div>
+
+      <!-- Live Spin Log -->
+      <div class="debug-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <h4 style="margin: 0;">📜 LIVE ROLL LOG</h4>
+          <button id="debug-clear-log" class="icon-btn" style="padding: 2px 6px; font-size: 10px;">Clear</button>
+        </div>
+        <div class="debug-log-content"></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ES6 App Entry Point -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

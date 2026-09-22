@@ -1,0 +1,314 @@
+/* Reel-Top 3 Wheel Pots */
+.top-pots-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  width: 100%;
+}
+
+.wheel-pot-card {
+  background: var(--bg-surface);
+  border: 1.5px solid var(--bg-surface-border);
+  border-radius: var(--border-radius-md);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.25s;
+}
+
+.pot-icon-wrapper {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.wheel-pot-card.pot-1 { border-color: #00e5ff; }
+.wheel-pot-card.pot-1 .pot-icon-wrapper { background: radial-gradient(circle, #007791, #002d38); }
+
+.wheel-pot-card.pot-2 { border-color: #c040fd; }
+.wheel-pot-card.pot-2 .pot-icon-wrapper { background: radial-gradient(circle, #781ca8, #300645); }
+
+.wheel-pot-card.pot-3 { border-color: #ffd700; }
+.wheel-pot-card.pot-3 .pot-icon-wrapper { background: radial-gradient(circle, #b8860b, #473200); }
+
+.pot-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.pot-name {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+}
+
+.pot-meta {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.pot-coins-badge {
+  margin-left: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 800;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 4px 8px;
+  border-radius: 6px;
+  color: #ffeb3b;
+}
+
+.wheel-pot-card.pot-pulse-hit {
+  transform: scale(1.15) !important;
+  box-shadow: 0 0 25px #ffd700 !important;
+}
+
+/* Flying Coin Particles Container */
+.coin-flight-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 90;
+}
+
+.flying-coin-particle {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ffe066, #d49000);
+  border: 1.5px solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  color: #4a3200;
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
+  will-change: transform;
+}
+
+/* Wheel Modal Dialog */
+.wheel-modal-dialog {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: radial-gradient(circle at 50% 30%, #1c224a 0%, #0d0f24 100%);
+  border: 3px solid #ffd700;
+  border-radius: 24px;
+  padding: 24px 30px;
+  box-shadow: 0 0 50px rgba(255, 215, 0, 0.5);
+}
+
+.wheel-modal-title {
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: #ffd700;
+  text-shadow: 0 0 15px rgba(255, 215, 0, 0.7);
+  margin-bottom: 16px;
+}
+
+.wheel-canvas-wrapper {
+  position: relative;
+  width: 420px;
+  height: 420px;
+}
+
+#wheel-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* Lock & Slingo Modal & Ladder Screen */
+.bonus-modal-dialog {
+  width: 95%;
+  max-width: 900px;
+  background: radial-gradient(circle at 50% 20%, #151b3d 0%, #080a17 100%);
+  border: 3px solid #c040fd;
+  border-radius: 20px;
+  padding: 20px 24px;
+  box-shadow: 0 0 60px rgba(192, 64, 253, 0.6);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bonus-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 10px;
+}
+
+.bonus-title {
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  background: linear-gradient(135deg, #fff, #c040fd, #ff2a6d);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.bonus-lives {
+  display: flex;
+  gap: 6px;
+}
+
+.life-heart {
+  font-size: 24px;
+  color: #ff2a6d;
+  filter: drop-shadow(0 0 8px #ff2a6d);
+  transition: transform 0.2s;
+}
+
+.life-heart.lost {
+  color: rgba(255, 255, 255, 0.15);
+  filter: none;
+}
+
+.bonus-main-layout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 20px;
+}
+
+.bonus-grid-wrapper {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: rgba(0, 0, 0, 0.4);
+  border: 2px solid rgba(192, 64, 253, 0.4);
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.bonus-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+}
+
+.bonus-cell {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 800;
+  position: relative;
+}
+
+.bonus-cell-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+/* Slingo Ladder Column */
+.slingo-ladder-container {
+  display: flex;
+  flex-direction: column;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 10px;
+  overflow-y: auto;
+  max-height: 480px;
+}
+
+.ladder-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-dim);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 6px;
+  margin-bottom: 6px;
+}
+
+.slingo-ladder {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ladder-step {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-dim);
+  transition: all 0.2s;
+}
+
+.ladder-step .step-lines {
+  width: 20px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.ladder-step.achieved {
+  background: rgba(0, 229, 255, 0.15);
+  color: #fff;
+  border-left: 3px solid #00e5ff;
+}
+
+.ladder-step.current-step {
+  background: linear-gradient(90deg, rgba(255, 215, 0, 0.35), transparent);
+  color: #ffd700;
+  border-left: 4px solid #ffd700;
+  font-weight: 900;
+  transform: translateX(4px);
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+}
+
+.bonus-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.bonus-status-text {
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffc83b;
+}
+
+.bonus-win-box {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.bonus-win-amount {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 22px;
+  font-weight: 900;
+  color: #4caf50;
+}

@@ -1,0 +1,133 @@
+/* Animations & Keyframes */
+
+@keyframes starPulse {
+  0% {
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.4), inset 0 0 10px rgba(255, 215, 0, 0.2);
+    transform: scale(1);
+  }
+  100% {
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.8), inset 0 0 20px rgba(255, 215, 0, 0.5);
+    transform: scale(1.02);
+  }
+}
+
+@keyframes ultraGlow {
+  0% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.5); }
+  100% { box-shadow: 0 0 35px rgba(255, 215, 0, 0.95); }
+}
+
+@keyframes vortexSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes lineGlow {
+  0% { filter: drop-shadow(0 0 4px #ffd700); opacity: 0.8; }
+  100% { filter: drop-shadow(0 0 14px #ffd700); opacity: 1; }
+}
+
+/* Cell Trigger & Action States */
+.landed-pop {
+  animation: cellDropBounce 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes cellDropBounce {
+  0% { transform: scale(0.3) translateY(-40px); opacity: 0; }
+  70% { transform: scale(1.1) translateY(0); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+.strike-firing {
+  animation: strikeZapPulse 0.6s ease-in-out;
+  border-color: #fff !important;
+  box-shadow: 0 0 35px #00e5ff !important;
+}
+
+@keyframes strikeZapPulse {
+  0%, 100% { transform: scale(1); }
+  30% { transform: scale(1.15); }
+}
+
+.strike-hit {
+  animation: strikeElectrify 0.6s ease-out;
+}
+
+@keyframes strikeElectrify {
+  0% { transform: scale(1); box-shadow: none; }
+  30% { transform: scale(1.12); box-shadow: 0 0 30px #00e5ff; filter: brightness(1.8); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+.vortex-sucking {
+  animation: vortexAbsorbPulse 0.7s ease-in-out;
+  box-shadow: 0 0 40px #c040fd !important;
+}
+
+@keyframes vortexAbsorbPulse {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.2) rotate(180deg); }
+  100% { transform: scale(1) rotate(360deg); }
+}
+
+.vortex-absorbed {
+  animation: suckedIntoVortex 0.7s ease-in;
+}
+
+@keyframes suckedIntoVortex {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); filter: brightness(1.6); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+.life-reset-glow {
+  animation: lifeResetFlash 0.8s ease-out;
+}
+
+@keyframes lifeResetFlash {
+  0% { box-shadow: 0 0 0px #00e676; }
+  40% { box-shadow: 0 0 25px #00e676; border-color: #00e676; }
+  100% { box-shadow: 0 0 0px #00e676; }
+}
+
+/* Big Win Celebration Banner */
+.win-celebration-banner {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, #2d1847 0%, #0c0817 90%);
+  border: 4px solid #ffd700;
+  border-radius: 30px;
+  padding: 30px 60px;
+  text-align: center;
+  box-shadow: 0 0 80px rgba(255, 215, 0, 0.8), inset 0 0 30px rgba(255, 215, 0, 0.4);
+  z-index: 200;
+  animation: bigWinEntrance 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.win-celebration-banner.hidden {
+  display: none;
+}
+
+@keyframes bigWinEntrance {
+  from { transform: translate(-50%, -50%) scale(0.4); opacity: 0; }
+  to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+.win-mult-text {
+  font-size: 38px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  background: linear-gradient(135deg, #fff 0%, #ffd700 60%, #ff8c00 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 10px;
+}
+
+.win-amount-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 54px;
+  font-weight: 900;
+  color: #00e5ff;
+  text-shadow: 0 0 25px rgba(0, 229, 255, 0.8);
+}

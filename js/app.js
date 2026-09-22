@@ -200,6 +200,7 @@ class CashVortexApp {
     this.dom.spinBtn.disabled = true;
     this.flyingCoins.clearAll();
     this.visualGrid.clearWinningLines();
+    this.visualGrid.clearWonCoins();
     this.dom.win.innerText = '$0.00';
 
     try {

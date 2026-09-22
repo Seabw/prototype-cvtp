@@ -160,7 +160,8 @@ export class CashVortexSlotEngine {
         if (r === 2 && c === 2) continue; // Center Star never expires
 
         const cell = this.grid[r][c];
-        if (cell.type !== SymbolType.Blank && (cell.wonThisSpin || cell.lifeRemaining <= 1)) {
+        // Only coins that expired after 3 lives (not involved in a win) fly to the pots
+        if (cell.type !== SymbolType.Blank && !cell.wonThisSpin && cell.lifeRemaining <= 1) {
           let potIdx = 0;
           if (this.config.xWheelPotWeightTable.totalWeight > 0) {
             potIdx = this.config.xWheelPotWeightTable.sample(this.rng);

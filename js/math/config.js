@@ -109,9 +109,9 @@ export function createBalanced955Config() {
     ],
 
     // Dynamic single-roll trigger multipliers
-    xWheelTriggerBaseWeightWheel1: 2200,
-    xWheelTriggerBaseWeightWheel2: 525,
-    xWheelTriggerBaseWeightWheel3: 132,
+    xWheelTriggerBaseWeightWheel1: 3430,
+    xWheelTriggerBaseWeightWheel2: 825,
+    xWheelTriggerBaseWeightWheel3: 212,
     xWheelTriggerNoTriggerWeight: 100000,
 
     // Base Game Table Selections (Low / Med / High)

@@ -74,14 +74,9 @@ export class VisualGrid {
         }
 
         // 3. Active valuable coin / modifier
-        const isExpiring = Boolean(cellData.wonThisSpin || cellData.lifeRemaining <= 1);
-        if (isExpiring) {
-          cellElem.classList.add('about-to-expire');
-          if (cellData.wonThisSpin) {
-            cellElem.classList.add('expiring-won');
-          } else {
-            cellElem.classList.add('expiring-last-life');
-          }
+        const isExpiringToPot = Boolean(!cellData.wonThisSpin && cellData.lifeRemaining <= 1);
+        if (isExpiringToPot) {
+          cellElem.classList.add('about-to-expire', 'expiring-last-life');
         }
 
         if (cellData.wonThisSpin) {
@@ -95,9 +90,9 @@ export class VisualGrid {
         let expiryTagHtml = '';
 
         if (cellData.wonThisSpin) {
-          expiryTagHtml = `<div class="expiry-pill won-pill">WON ➔ FLY</div>`;
+          expiryTagHtml = `<div class="expiry-pill won-pill">WINNER</div>`;
         } else if (cellData.lifeRemaining === 1) {
-          expiryTagHtml = `<div class="expiry-pill last-life-pill">1 LIFE ⌛</div>`;
+          expiryTagHtml = `<div class="expiry-pill last-life-pill">1 LIFE ➔ POT</div>`;
         }
 
         // Life badge
@@ -276,6 +271,18 @@ export class VisualGrid {
     for (let r = 0; r < 5; r++) {
       for (let c = 0; c < 5; c++) {
         this.cellElements[r][c].classList.remove('line-win-cell');
+      }
+    }
+  }
+
+  clearWonCoins() {
+    for (let r = 0; r < 5; r++) {
+      for (let c = 0; c < 5; c++) {
+        if (r === 2 && c === 2) continue;
+        const elem = this.cellElements[r]?.[c];
+        if (elem && elem.classList.contains('won-spin')) {
+          this.setCellBlank(r, c);
+        }
       }
     }
   }

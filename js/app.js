@@ -271,20 +271,24 @@ class CashVortexApp {
         this.visualGrid.render(this.engine.grid);
       }
       this.soundSynth.playCoinLand();
-      await new Promise(r => setTimeout(r, 350 * speedMult));
+      this.setStatus('SYMBOLS LANDED!');
+      // Wait for drop & bounce animations to fully settle
+      await new Promise(r => setTimeout(r, 650 * speedMult));
 
       // Step 4: Strikes Execution (Flying energy boost & count-up)
       if (telemetry.strikeActions && telemetry.strikeActions.length > 0) {
         for (const strike of telemetry.strikeActions) {
           const tier = strike.strikeCell.type.replace('Strike', '').toUpperCase();
-          this.setStatus(`⚡ ${tier} STRIKE ACTIVATED! APPLYING +${strike.strikeCell.value.toFixed(1)}x TO TARGETS...`);
+          const count = strike.affectedCells ? strike.affectedCells.length : 0;
+          this.setStatus(`⚡ ${tier} STRIKE FIRING! APPLYING +${strike.strikeCell.value.toFixed(1)}x TO ${count} COINS...`);
+          await new Promise(r => setTimeout(r, 200 * speedMult));
           await this.visualGrid.animateStrikeFlyAndCountUp(
             strike,
             this.dom.coinFlightContainer,
             this.soundSynth,
             speedMult
           );
-          await new Promise(r => setTimeout(r, 200 * speedMult));
+          await new Promise(r => setTimeout(r, 350 * speedMult));
         }
       }
 
@@ -292,14 +296,16 @@ class CashVortexApp {
       if (telemetry.vortexActions && telemetry.vortexActions.length > 0) {
         for (const vortex of telemetry.vortexActions) {
           const tier = vortex.vortexCell.type.replace('Vortex', '').toUpperCase();
-          this.setStatus(`🌀 ${tier} VORTEX ACTIVATED! GATHERING CASH VALUES (${vortex.finalValue.toFixed(1)}x)...`);
+          const count = vortex.collectedCells ? vortex.collectedCells.length : 0;
+          this.setStatus(`🌀 ${tier} VORTEX SUCTIONING ${count} COINS (BASE ${vortex.vortexCell.basePay.toFixed(1)}x ➔ ${vortex.finalValue.toFixed(1)}x)...`);
+          await new Promise(r => setTimeout(r, 200 * speedMult));
           await this.visualGrid.animateVortexSuctionAndCountUp(
             vortex,
             this.dom.coinFlightContainer,
             this.soundSynth,
             speedMult
           );
-          await new Promise(r => setTimeout(r, 200 * speedMult));
+          await new Promise(r => setTimeout(r, 400 * speedMult));
         }
       }
 

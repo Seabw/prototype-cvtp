@@ -227,7 +227,7 @@ export class VisualGrid {
 
     if (!affectedCells || affectedCells.length === 0) {
       if (soundSynth) soundSynth.playStrikeZap();
-      await new Promise(r => setTimeout(r, 350 * speedMult));
+      await new Promise(r => setTimeout(r, 450 * speedMult));
       fromElem.classList.remove('strike-firing');
       return;
     }
@@ -244,101 +244,111 @@ export class VisualGrid {
       ? 'mega'
       : 'ultra';
 
-    const flightDuration = Math.max(160, 420 * speedMult);
-    const countUpDuration = Math.max(150, 360 * speedMult);
+    const flightDuration = Math.max(220, 600 * speedMult);
+    const countUpDuration = Math.max(200, 450 * speedMult);
+    const staggerDelay = Math.max(40, 90 * speedMult);
 
     const promises = affectedCells.map((target, idx) => {
       return new Promise(resolve => {
-        const targetElem = this.cellElements[target.row]?.[target.col];
-        if (!targetElem || !containerElement) {
-          resolve();
-          return;
-        }
-
-        const endRect = targetElem.getBoundingClientRect();
-        const endX = endRect.left + endRect.width / 2;
-        const endY = endRect.top + endRect.height / 2;
-
-        const particle = document.createElement('div');
-        particle.className = `flying-strike-particle strike-${tier}`;
-        particle.innerHTML = `
-          <span class="strike-spark-bolt">⚡</span>
-          <span class="strike-val-tag">+${strikeCell.value.toFixed(1)}x</span>
-        `;
-        particle.style.left = `${startX}px`;
-        particle.style.top = `${startY}px`;
-        containerElement.appendChild(particle);
-
-        const startTime = performance.now();
-        const midX = (startX + endX) / 2 + (Math.random() - 0.5) * 30;
-        const midY = (startY + endY) / 2 - 35;
-
-        const animate = currentTime => {
-          try {
-            const elapsed = (currentTime || performance.now()) - startTime;
-            const t = Math.min(1, Math.max(0, elapsed / flightDuration));
-
-            const x = Math.pow(1 - t, 2) * startX + 2 * (1 - t) * t * midX + Math.pow(t, 2) * endX;
-            const y = Math.pow(1 - t, 2) * startY + 2 * (1 - t) * t * midY + Math.pow(t, 2) * endY;
-            const scale = 0.85 + Math.sin(t * Math.PI) * 0.45;
-
-            particle.style.transform = `translate(-50%, -50%) translate(${x - startX}px, ${y - startY}px) scale(${scale})`;
-
-            if (t < 1) {
-              requestAnimationFrame(animate);
-            } else {
-              particle.remove();
-
-              // Impact flash & pulse on target cell
-              targetElem.classList.add('strike-hit', 'val-countup-pop');
-              if (soundSynth) soundSynth.playCoinLand();
-
-              // Smooth numeric count-up
-              const valElem = targetElem.querySelector('.coin-value');
-              if (valElem) {
-                const startVal = target.prevVal;
-                const endVal = target.newVal;
-                const countStartTime = performance.now();
-
-                const countStep = nowTime => {
-                  const countElapsed = (nowTime || performance.now()) - countStartTime;
-                  const progress = Math.min(1, Math.max(0, countElapsed / countUpDuration));
-                  const currentVal = startVal + (endVal - startVal) * progress;
-                  valElem.innerText = `${currentVal.toFixed(1)}x`;
-
-                  if (progress < 1) {
-                    requestAnimationFrame(countStep);
-                  } else {
-                    valElem.innerText = `${endVal.toFixed(1)}x`;
-                    setTimeout(() => {
-                      targetElem.classList.remove('strike-hit', 'val-countup-pop');
-                      resolve();
-                    }, 120 * speedMult);
-                  }
-                };
-                requestAnimationFrame(countStep);
-              } else {
-                setTimeout(() => {
-                  targetElem.classList.remove('strike-hit', 'val-countup-pop');
-                  resolve();
-                }, 120 * speedMult);
-              }
-            }
-          } catch (e) {
-            particle.remove();
-            resolve();
-          }
-        };
-
-        // Slight stagger per target
         setTimeout(() => {
+          const targetElem = this.cellElements[target.row]?.[target.col];
+          if (!targetElem || !containerElement) {
+            resolve();
+            return;
+          }
+
+          const endRect = targetElem.getBoundingClientRect();
+          const endX = endRect.left + endRect.width / 2;
+          const endY = endRect.top + endRect.height / 2;
+
+          const particle = document.createElement('div');
+          particle.className = `flying-strike-particle strike-${tier}`;
+          particle.innerHTML = `
+            <span class="strike-spark-bolt">⚡</span>
+            <span class="strike-val-tag">+${strikeCell.value.toFixed(1)}x</span>
+          `;
+          particle.style.position = 'fixed';
+          particle.style.left = '0px';
+          particle.style.top = '0px';
+          particle.style.transform = `translate3d(${startX}px, ${startY}px, 0) translate(-50%, -50%) scale(0.9)`;
+          containerElement.appendChild(particle);
+
+          const startTime = performance.now();
+          const midX = (startX + endX) / 2 + (Math.random() - 0.5) * 40;
+          const midY = (startY + endY) / 2 - 50;
+
+          const animate = currentTime => {
+            try {
+              const elapsed = (currentTime || performance.now()) - startTime;
+              const t = Math.min(1, Math.max(0, elapsed / flightDuration));
+
+              const x = Math.pow(1 - t, 2) * startX + 2 * (1 - t) * t * midX + Math.pow(t, 2) * endX;
+              const y = Math.pow(1 - t, 2) * startY + 2 * (1 - t) * t * midY + Math.pow(t, 2) * endY;
+              const scale = 0.9 + Math.sin(t * Math.PI) * 0.45;
+
+              particle.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%) scale(${scale})`;
+
+              if (t < 1) {
+                requestAnimationFrame(animate);
+              } else {
+                particle.remove();
+
+                // Target impact zap & pop
+                targetElem.classList.add('strike-hit', 'val-countup-pop');
+                if (soundSynth) {
+                  soundSynth.playCoinLand();
+                }
+
+                // Smooth numeric count-up with ticker sound
+                const valElem = targetElem.querySelector('.coin-value');
+                if (valElem) {
+                  const startVal = target.prevVal;
+                  const endVal = target.newVal;
+                  const countStartTime = performance.now();
+                  let lastTickTime = 0;
+
+                  const countStep = nowTime => {
+                    const countElapsed = (nowTime || performance.now()) - countStartTime;
+                    const progress = Math.min(1, Math.max(0, countElapsed / countUpDuration));
+                    const currentVal = startVal + (endVal - startVal) * progress;
+                    valElem.innerText = `${currentVal.toFixed(1)}x`;
+
+                    if (nowTime - lastTickTime > 70 && soundSynth) {
+                      soundSynth.playCountUpTick();
+                      lastTickTime = nowTime;
+                    }
+
+                    if (progress < 1) {
+                      requestAnimationFrame(countStep);
+                    } else {
+                      valElem.innerText = `${endVal.toFixed(1)}x`;
+                      setTimeout(() => {
+                        targetElem.classList.remove('strike-hit', 'val-countup-pop');
+                        resolve();
+                      }, 160 * speedMult);
+                    }
+                  };
+                  requestAnimationFrame(countStep);
+                } else {
+                  setTimeout(() => {
+                    targetElem.classList.remove('strike-hit', 'val-countup-pop');
+                    resolve();
+                  }, 160 * speedMult);
+                }
+              }
+            } catch (e) {
+              particle.remove();
+              resolve();
+            }
+          };
+
           requestAnimationFrame(animate);
-        }, idx * 25 * speedMult);
+        }, idx * staggerDelay);
       });
     });
 
     // Safety timeout in case of any animation frame edge case
-    const safetyPromise = new Promise(resolve => setTimeout(resolve, flightDuration + countUpDuration + 500));
+    const safetyPromise = new Promise(resolve => setTimeout(resolve, flightDuration + affectedCells.length * staggerDelay + countUpDuration + 600));
     await Promise.race([Promise.all(promises), safetyPromise]);
 
     fromElem.classList.remove('strike-firing');
@@ -360,7 +370,7 @@ export class VisualGrid {
 
     if (!collectedCells || collectedCells.length === 0) {
       if (soundSynth) soundSynth.playVortexWhoosh();
-      await new Promise(r => setTimeout(r, 350 * speedMult));
+      await new Promise(r => setTimeout(r, 450 * speedMult));
       vortexElem.classList.remove('vortex-sucking');
       return;
     }
@@ -377,8 +387,9 @@ export class VisualGrid {
       ? 'mega'
       : 'ultra';
 
-    const flightDuration = Math.max(180, 440 * speedMult);
-    const countUpDuration = Math.max(160, 400 * speedMult);
+    const flightDuration = Math.max(240, 650 * speedMult);
+    const countUpDuration = Math.max(220, 550 * speedMult);
+    const staggerDelay = Math.max(45, 110 * speedMult);
 
     // Source coins pulse with absorption glow while staying fully intact on board
     collectedCells.forEach(source => {
@@ -391,61 +402,66 @@ export class VisualGrid {
     // Launch flying cash particles from each collected cell into vortex center
     const flightPromises = collectedCells.map((source, idx) => {
       return new Promise(resolve => {
-        const sourceElem = this.cellElements[source.row]?.[source.col];
-        if (!sourceElem || !containerElement) {
-          resolve();
-          return;
-        }
+        setTimeout(() => {
+          const sourceElem = this.cellElements[source.row]?.[source.col];
+          if (!sourceElem || !containerElement) {
+            resolve();
+            return;
+          }
 
-        const startRect = sourceElem.getBoundingClientRect();
-        const startX = startRect.left + startRect.width / 2;
-        const startY = startRect.top + startRect.height / 2;
+          const startRect = sourceElem.getBoundingClientRect();
+          const startX = startRect.left + startRect.width / 2;
+          const startY = startRect.top + startRect.height / 2;
 
-        const particle = document.createElement('div');
-        particle.className = `flying-vortex-particle vortex-${tier}`;
-        particle.innerHTML = `
-          <span class="vortex-spark-swirl">🌀</span>
-          <span class="vortex-val-tag">${source.val.toFixed(1)}x</span>
-        `;
-        particle.style.left = `${startX}px`;
-        particle.style.top = `${startY}px`;
-        containerElement.appendChild(particle);
+          const particle = document.createElement('div');
+          particle.className = `flying-vortex-particle vortex-${tier}`;
+          particle.innerHTML = `
+            <span class="vortex-spark-swirl">🌀</span>
+            <span class="vortex-val-tag">${source.val.toFixed(1)}x</span>
+          `;
+          particle.style.position = 'fixed';
+          particle.style.left = '0px';
+          particle.style.top = '0px';
+          particle.style.transform = `translate3d(${startX}px, ${startY}px, 0) translate(-50%, -50%) scale(1.0)`;
+          containerElement.appendChild(particle);
 
-        const startTime = performance.now();
-        const midX = (startX + endX) / 2 + (Math.random() - 0.5) * 40;
-        const midY = (startY + endY) / 2 - 25;
+          const startTime = performance.now();
+          const midX = (startX + endX) / 2 + (Math.random() - 0.5) * 50;
+          const midY = (startY + endY) / 2 - 40;
 
-        const animate = currentTime => {
-          try {
-            const elapsed = (currentTime || performance.now()) - startTime;
-            const t = Math.min(1, Math.max(0, elapsed / flightDuration));
+          const animate = currentTime => {
+            try {
+              const elapsed = (currentTime || performance.now()) - startTime;
+              const t = Math.min(1, Math.max(0, elapsed / flightDuration));
 
-            const x = Math.pow(1 - t, 2) * startX + 2 * (1 - t) * t * midX + Math.pow(t, 2) * endX;
-            const y = Math.pow(1 - t, 2) * startY + 2 * (1 - t) * t * midY + Math.pow(t, 2) * endY;
-            const scale = 1.0 - t * 0.35;
-            const rotate = t * 720;
+              const x = Math.pow(1 - t, 2) * startX + 2 * (1 - t) * t * midX + Math.pow(t, 2) * endX;
+              const y = Math.pow(1 - t, 2) * startY + 2 * (1 - t) * t * midY + Math.pow(t, 2) * endY;
+              const scale = 1.15 - t * 0.35;
+              const rotate = t * 720;
 
-            particle.style.transform = `translate(-50%, -50%) translate(${x - startX}px, ${y - startY}px) scale(${scale}) rotate(${rotate}deg)`;
+              particle.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%) scale(${scale}) rotate(${rotate}deg)`;
 
-            if (t < 1) {
-              requestAnimationFrame(animate);
-            } else {
+              if (t < 1) {
+                requestAnimationFrame(animate);
+              } else {
+                particle.remove();
+                if (soundSynth) soundSynth.playPotDing();
+                vortexElem.classList.add('vortex-pulse-hit');
+                setTimeout(() => vortexElem.classList.remove('vortex-pulse-hit'), 200);
+                resolve();
+              }
+            } catch (e) {
               particle.remove();
               resolve();
             }
-          } catch (e) {
-            particle.remove();
-            resolve();
-          }
-        };
+          };
 
-        setTimeout(() => {
           requestAnimationFrame(animate);
-        }, idx * 35 * speedMult);
+        }, idx * staggerDelay);
       });
     });
 
-    const flightSafety = new Promise(resolve => setTimeout(resolve, flightDuration + collectedCells.length * 40 + 400));
+    const flightSafety = new Promise(resolve => setTimeout(resolve, flightDuration + collectedCells.length * staggerDelay + 500));
     await Promise.race([Promise.all(flightPromises), flightSafety]);
 
     // Clean up source cell highlights (coins remain on grid!)
@@ -458,12 +474,12 @@ export class VisualGrid {
 
     // Vortex absorption impact and count-up
     vortexElem.classList.add('vortex-pulse-hit', 'val-countup-pop');
-    if (soundSynth) soundSynth.playPotDing();
 
     if (vortexValElem) {
       const startVal = vortexCell.basePay;
       const endVal = finalValue;
       const countStartTime = performance.now();
+      let lastTickTime = 0;
 
       await new Promise(resolve => {
         const countStep = nowTime => {
@@ -471,6 +487,11 @@ export class VisualGrid {
           const progress = Math.min(1, Math.max(0, countElapsed / countUpDuration));
           const currentVal = startVal + (endVal - startVal) * progress;
           vortexValElem.innerText = `${currentVal.toFixed(1)}x`;
+
+          if (nowTime - lastTickTime > 65 && soundSynth) {
+            soundSynth.playCountUpTick();
+            lastTickTime = nowTime;
+          }
 
           if (progress < 1) {
             requestAnimationFrame(countStep);
@@ -483,7 +504,7 @@ export class VisualGrid {
       });
     }
 
-    await new Promise(r => setTimeout(r, 160 * speedMult));
+    await new Promise(r => setTimeout(r, 220 * speedMult));
     vortexElem.classList.remove('vortex-sucking', 'vortex-pulse-hit', 'val-countup-pop');
   }
 

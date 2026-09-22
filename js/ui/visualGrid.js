@@ -31,21 +31,32 @@ export class VisualGrid {
     }
   }
 
+  setCellBlank(r, c) {
+    const cellElem = this.cellElements[r]?.[c];
+    if (!cellElem) return;
+    cellElem.className = 'grid-cell blank-cell';
+    const inner = cellElem.querySelector('.cell-content');
+    if (inner) {
+      inner.innerHTML = '<div class="empty-marker">·</div>';
+    }
+  }
+
   render(grid, options = {}) {
+    if (!grid) return;
+
     for (let r = 0; r < 5; r++) {
       for (let c = 0; c < 5; c++) {
-        const cellData = grid[r][c];
-        const cellElem = this.cellElements[r][c];
+        const cellData = grid[r]?.[c];
+        const cellElem = this.cellElements[r]?.[c];
+        if (!cellElem) continue;
         const inner = cellElem.querySelector('.cell-content');
+        if (!inner) continue;
 
         // Reset base classes
         cellElem.className = 'grid-cell';
 
-        if (cellData.wonThisSpin) {
-          cellElem.classList.add('won-spin');
-        }
-
-        if (r === 2 && c === 2 && cellData.type === SymbolType.CentralWildStar) {
+        // 1. Central Wild Star
+        if (r === 2 && c === 2 && (!cellData || cellData.type === SymbolType.CentralWildStar)) {
           cellElem.classList.add('center-star-cell');
           inner.innerHTML = `
             <div class="symbol-icon star-icon">★</div>
@@ -55,38 +66,65 @@ export class VisualGrid {
           continue;
         }
 
-        if (cellData.type === SymbolType.Blank) {
+        // 2. Blank Cell
+        if (!cellData || cellData.type === SymbolType.Blank) {
           cellElem.classList.add('blank-cell');
           inner.innerHTML = `<div class="empty-marker">·</div>`;
           continue;
         }
 
-        // Active valuable symbol
-        let typeClass = '';
+        // 3. Active valuable coin / modifier
+        const isExpiring = Boolean(cellData.wonThisSpin || cellData.lifeRemaining <= 1);
+        if (isExpiring) {
+          cellElem.classList.add('about-to-expire');
+          if (cellData.wonThisSpin) {
+            cellElem.classList.add('expiring-won');
+          } else {
+            cellElem.classList.add('expiring-last-life');
+          }
+        }
+
+        if (cellData.wonThisSpin) {
+          cellElem.classList.add('won-spin');
+        }
+
+        let typeClass = 'symbol-cash-coin';
         let iconHtml = '';
         let labelHtml = '';
         let badgeHtml = '';
+        let expiryTagHtml = '';
+
+        if (cellData.wonThisSpin) {
+          expiryTagHtml = `<div class="expiry-pill won-pill">WON ➔ FLY</div>`;
+        } else if (cellData.lifeRemaining === 1) {
+          expiryTagHtml = `<div class="expiry-pill last-life-pill">1 LIFE ⌛</div>`;
+        }
 
         // Life badge
         if (cellData.lifeRemaining > 0 && cellData.lifeRemaining <= 3) {
           const dots = Array.from({ length: 3 }, (_, i) => {
-            const active = i < cellData.lifeRemaining ? 'active' : 'spent';
-            return `<span class="life-dot ${active}"></span>`;
+            let dotClass = 'spent';
+            if (i < cellData.lifeRemaining) {
+              dotClass = (cellData.lifeRemaining === 1) ? 'active last-life' : 'active';
+            }
+            return `<span class="life-dot ${dotClass}"></span>`;
           }).join('');
-          badgeHtml = `<div class="life-badge" title="${cellData.lifeRemaining} spin life remaining">${dots}</div>`;
+          badgeHtml = `<div class="life-badge ${cellData.lifeRemaining === 1 ? 'last-life-badge' : ''}" title="${cellData.lifeRemaining} spin life remaining">${dots}</div>`;
         }
+
+        const val = typeof cellData.cashValue === 'number' && !isNaN(cellData.cashValue) ? cellData.cashValue : 0.4;
 
         switch (cellData.type) {
           case SymbolType.CashCoin:
             typeClass = 'symbol-cash-coin';
             iconHtml = `<div class="coin-disc"><span class="coin-symbol">$</span></div>`;
-            labelHtml = `<div class="coin-value">${cellData.cashValue.toFixed(1)}x</div>`;
+            labelHtml = `<div class="coin-value">${val.toFixed(1)}x</div>`;
             break;
 
           case SymbolType.JackpotCoin:
             typeClass = `symbol-jackpot-coin jp-${(cellData.jackpotType || 'mini').toLowerCase()}`;
-            iconHtml = `<div class="jp-badge">${cellData.jackpotType?.toUpperCase()}</div>`;
-            labelHtml = `<div class="coin-value">${cellData.cashValue.toFixed(0)}x</div>`;
+            iconHtml = `<div class="jp-badge">${(cellData.jackpotType || 'MINI').toUpperCase()}</div>`;
+            labelHtml = `<div class="coin-value">${val.toFixed(0)}x</div>`;
             badgeHtml += `<div class="isolation-shield" title="Jackpot Isolation: Immune to modifiers">🛡️</div>`;
             break;
 
@@ -98,7 +136,7 @@ export class VisualGrid {
             iconHtml = `<div class="strike-bolt">⚡</div>`;
             labelHtml = `
               <div class="strike-title">${tier.toUpperCase()} STRIKE</div>
-              <div class="coin-value">+${cellData.cashValue.toFixed(1)}x</div>
+              <div class="coin-value">+${val.toFixed(1)}x</div>
             `;
             break;
           }
@@ -111,23 +149,25 @@ export class VisualGrid {
             iconHtml = `<div class="vortex-core">🌀</div>`;
             labelHtml = `
               <div class="vortex-title">${tier.toUpperCase()} VORTEX</div>
-              <div class="coin-value">${cellData.cashValue.toFixed(1)}x</div>
+              <div class="coin-value">${val.toFixed(1)}x</div>
             `;
             break;
           }
 
           default:
-            typeClass = 'symbol-generic';
-            labelHtml = `<div class="coin-value">${cellData.cashValue.toFixed(1)}x</div>`;
+            typeClass = 'symbol-cash-coin';
+            iconHtml = `<div class="coin-disc"><span class="coin-symbol">$</span></div>`;
+            labelHtml = `<div class="coin-value">${val.toFixed(1)}x</div>`;
         }
 
-        cellElem.classList.add(typeClass);
+        typeClass.split(' ').filter(Boolean).forEach(cls => cellElem.classList.add(cls));
         if (cellData.justLanded) cellElem.classList.add('landed-pop');
 
         inner.innerHTML = `
           ${badgeHtml}
           ${iconHtml}
           ${labelHtml}
+          ${expiryTagHtml}
         `;
       }
     }

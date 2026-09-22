@@ -113,7 +113,7 @@ export class BonusView {
             cellElem.className = 'bonus-cell landed-pop';
 
             if (item.type === SymbolType.JackpotCoin) {
-              cellElem.classList.add(`symbol-jackpot-coin jp-${(item.jackpotType || 'mini').toLowerCase()}`);
+              cellElem.classList.add('symbol-jackpot-coin', `jp-${(item.jackpotType || 'mini').toLowerCase()}`);
               cellElem.innerHTML = `
                 <div class="bonus-cell-content">
                   <div class="jp-badge">${item.jackpotType?.toUpperCase()}</div>
@@ -122,7 +122,7 @@ export class BonusView {
               `;
             } else if (item.type === SymbolType.MiniStrike || item.type === SymbolType.MegaStrike || item.type === SymbolType.UltraStrike) {
               const tier = item.type === SymbolType.MiniStrike ? 'mini' : item.type === SymbolType.MegaStrike ? 'mega' : 'ultra';
-              cellElem.classList.add(`symbol-strike strike-${tier}`);
+              cellElem.classList.add('symbol-strike', `strike-${tier}`);
               cellElem.innerHTML = `
                 <div class="bonus-cell-content">
                   <div class="strike-bolt">⚡</div>
@@ -130,7 +130,7 @@ export class BonusView {
                 </div>
               `;
             } else if (item.type === SymbolType.MiniVortex) {
-              cellElem.classList.add('symbol-vortex vortex-mini');
+              cellElem.classList.add('symbol-vortex', 'vortex-mini');
               cellElem.innerHTML = `
                 <div class="bonus-cell-content">
                   <div class="vortex-core">🌀</div>

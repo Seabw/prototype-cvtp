@@ -59,6 +59,7 @@ class CashVortexApp {
       autoBtn: document.getElementById('auto-btn'),
       turboBtn: document.getElementById('turbo-btn'),
       muteBtn: document.getElementById('mute-btn'),
+      debugToggleBtn: document.getElementById('debug-toggle-btn'),
       betDownBtn: document.getElementById('bet-down-btn'),
       betUpBtn: document.getElementById('bet-up-btn'),
       grid: document.getElementById('slot-grid'),
@@ -86,7 +87,7 @@ class CashVortexApp {
 
   initSubsystems() {
     this.visualGrid = new VisualGrid(this.dom.grid, this.dom.svgLines);
-    this.flyingCoins = new FlyingCoins(this.dom.coinFlightContainer, this.dom.potElements);
+    this.flyingCoins = new FlyingCoins(this.dom.coinFlightContainer, this.dom.potElements, this.visualGrid);
     this.wheelOverlay = new WheelOverlay(this.dom.wheelModal, this.dom.wheelCanvas, this.dom.wheelTitle, this.soundSynth);
     this.bonusView = new BonusView(this.dom.bonusModal, this.soundSynth);
 
@@ -117,27 +118,36 @@ class CashVortexApp {
 
     this.dom.muteBtn.addEventListener('click', () => {
       const isMuted = this.soundSynth.toggleMute();
-      this.dom.muteBtn.innerText = isMuted ? '🔇 MUTE' : '🔊 SOUND';
-      this.dom.muteBtn.classList.toggle('active', isMuted);
+      this.dom.muteBtn.classList.toggle('active', !isMuted);
+      this.dom.muteBtn.innerText = isMuted ? '🔇 MUTED' : '🔊 SOUND';
     });
 
-    this.dom.betDownBtn.addEventListener('click', () => {
-      if (this.isSpinning) return;
-      if (this.betIndex > 0) {
-        this.betIndex--;
-        this.bet = this.betOptions[this.betIndex];
-        this.updateHud();
-      }
+    this.dom.debugToggleBtn.addEventListener('click', () => {
+      const isOpen = this.debugPanel.toggle();
+      this.dom.debugToggleBtn.classList.toggle('active', isOpen);
     });
 
-    this.dom.betUpBtn.addEventListener('click', () => {
-      if (this.isSpinning) return;
-      if (this.betIndex < this.betOptions.length - 1) {
-        this.betIndex++;
-        this.bet = this.betOptions[this.betIndex];
-        this.updateHud();
-      }
-    });
+    if (this.dom.betDownBtn) {
+      this.dom.betDownBtn.addEventListener('click', () => {
+        if (this.isSpinning) return;
+        if (this.betIndex > 0) {
+          this.betIndex--;
+          this.bet = this.betOptions[this.betIndex];
+          this.updateHud();
+        }
+      });
+    }
+
+    if (this.dom.betUpBtn) {
+      this.dom.betUpBtn.addEventListener('click', () => {
+        if (this.isSpinning) return;
+        if (this.betIndex < this.betOptions.length - 1) {
+          this.betIndex++;
+          this.bet = this.betOptions[this.betIndex];
+          this.updateHud();
+        }
+      });
+    }
 
     window.addEventListener('keydown', e => {
       if (e.code === 'Space' && !this.isSpinning && !this.wheelOverlay.isSpinning) {
@@ -188,6 +198,7 @@ class CashVortexApp {
 
     this.isSpinning = true;
     this.dom.spinBtn.disabled = true;
+    this.flyingCoins.clearAll();
     this.visualGrid.clearWinningLines();
     this.dom.win.innerText = '$0.00';
 
@@ -211,7 +222,7 @@ class CashVortexApp {
       // Step 1: Expired Coins Flight to Pots
       if (telemetry.expiredCoins && telemetry.expiredCoins.length > 0) {
         this.setStatus(`EXPIRED COINS FLYING TO POTS (${telemetry.expiredCoins.length} COINS)...`);
-        await this.flyingCoins.animateExpiredCoins(telemetry.expiredCoins, this.soundSynth);
+        await this.flyingCoins.animateExpiredCoins(telemetry.expiredCoins, this.soundSynth, this.isTurbo);
 
         if (this.dom.potCounts[0]) this.dom.potCounts[0].innerText = telemetry.n1;
         if (this.dom.potCounts[1]) this.dom.potCounts[1].innerText = telemetry.n2;

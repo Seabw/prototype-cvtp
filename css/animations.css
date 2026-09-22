@@ -26,6 +26,45 @@
   100% { filter: drop-shadow(0 0 14px #ffd700); opacity: 1; }
 }
 
+/* Expiring Coins & Last Life Keyframes */
+@keyframes expiringCellPulse {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(255, 87, 34, 0.5), inset 0 0 6px rgba(255, 87, 34, 0.2);
+    border-color: #ff7043;
+  }
+  50% {
+    box-shadow: 0 0 22px rgba(255, 61, 0, 0.85), inset 0 0 12px rgba(255, 61, 0, 0.4);
+    border-color: #ff3d00;
+  }
+}
+
+@keyframes expiringWonPulse {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(255, 215, 0, 0.6), inset 0 0 8px rgba(255, 145, 0, 0.3);
+    border-color: #ffd700;
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(255, 171, 0, 0.9), inset 0 0 14px rgba(255, 109, 0, 0.5);
+    border-color: #ff9100;
+  }
+}
+
+@keyframes lastLifePillPulse {
+  0% { transform: translateX(-50%) scale(0.95); opacity: 0.9; }
+  100% { transform: translateX(-50%) scale(1.05); opacity: 1; }
+}
+
+@keyframes lifeDotWarningPulse {
+  0%, 100% {
+    background: #ff1744;
+    box-shadow: 0 0 5px #ff1744;
+  }
+  50% {
+    background: #ff5252;
+    box-shadow: 0 0 12px #ff1744, 0 0 4px #fff;
+  }
+}
+
 /* Cell Trigger & Action States */
 .landed-pop {
   animation: cellDropBounce 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);

@@ -100,6 +100,12 @@
   padding: 2px 4px;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.15);
+  z-index: 3;
+}
+
+.life-badge.last-life-badge {
+  border-color: rgba(255, 61, 0, 0.6);
+  background: rgba(255, 61, 0, 0.2);
 }
 
 .life-dot {
@@ -113,8 +119,67 @@
   box-shadow: 0 0 6px #00e676;
 }
 
+.life-dot.active.last-life {
+  background: #ff1744;
+  box-shadow: 0 0 8px #ff1744;
+  animation: lifeDotWarningPulse 1s infinite alternate;
+}
+
 .life-dot.spent {
   background: rgba(255, 255, 255, 0.2);
+}
+
+/* Expiry Pill Tag (Indicator showing coin is in final spin or won) */
+.expiry-pill {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 8.5px;
+  font-weight: 900;
+  padding: 1px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  z-index: 4;
+}
+
+.expiry-pill.won-pill {
+  background: linear-gradient(135deg, #ffd700 0%, #ff9100 100%);
+  color: #1a1608;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.7);
+}
+
+.expiry-pill.last-life-pill {
+  background: linear-gradient(135deg, #ff5722 0%, #d50000 100%);
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(255, 61, 0, 0.7);
+  animation: lastLifePillPulse 1.2s infinite alternate ease-in-out;
+}
+
+/* Expiring Coins Distinction */
+.grid-cell.about-to-expire.expiring-last-life {
+  border: 1.5px solid #ff5722 !important;
+  animation: expiringCellPulse 1.4s infinite ease-in-out;
+}
+
+.grid-cell.about-to-expire.expiring-won {
+  border: 2px solid #ffd700 !important;
+  animation: expiringWonPulse 1.2s infinite ease-in-out;
+}
+
+.symbol-cash-coin.about-to-expire.expiring-last-life {
+  background: radial-gradient(circle at 35% 35%, #3d1b15 0%, #170907 100%) !important;
+}
+
+.symbol-cash-coin.about-to-expire.expiring-last-life .coin-disc {
+  background: radial-gradient(circle at 30% 30%, #ff8a65, #d84315);
+  box-shadow: 0 2px 8px rgba(216, 67, 21, 0.6), inset 0 1px 2px rgba(255, 255, 255, 0.6);
+}
+
+.symbol-cash-coin.about-to-expire.expiring-won {
+  background: radial-gradient(circle at 35% 35%, #3d2c0b 0%, #1a1205 100%) !important;
 }
 
 /* Base Cash Coin */

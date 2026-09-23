@@ -113,5 +113,27 @@ if (!line1Win || line1Win.payoutCents !== 1200) {
 }
 console.log('✅ Test 2 PASSED: Row 0 with Strikes (Mini, Mega, Ultra) recognized as Line 1 win with $12.00 payout!');
 
+// Test 3: Column 3 (Line 9: [3, 8, 13, 18, 23]) with Mini Strike and Ultra Strike (matching 2nd screenshot)
+testEngine.grid[0][3].type = 7; // MiniStrike
+testEngine.grid[0][3].cashValue = 0.4;
+testEngine.grid[1][3].type = 2; // CashCoin
+testEngine.grid[1][3].cashValue = 0.2;
+testEngine.grid[2][3].type = 2; // CashCoin
+testEngine.grid[2][3].cashValue = 0.4;
+testEngine.grid[3][3].type = 9; // UltraStrike
+testEngine.grid[3][3].cashValue = 0.2;
+testEngine.grid[4][3].type = 2; // CashCoin
+testEngine.grid[4][3].cashValue = 1.0;
+
+const telemetry3 = { totalWinCents: 0, winningLines: [] };
+testEngine.evaluateSlingoLines(telemetry3);
+
+const line9Win = telemetry3.winningLines.find(l => l.lineId === 9);
+if (!line9Win || line9Win.payoutCents !== 220) {
+  throw new Error(`FAILED: Column 3 with Mini Strike and Ultra Strike was not recognized as a win line! Got: ${JSON.stringify(telemetry3.winningLines)}`);
+}
+console.log('✅ Test 3 PASSED: Column 3 with Mini Strike (0.4x) and Ultra Strike (0.2x) recognized as Line 9 win with $2.20 payout!');
+
 console.log('✅ ALL VERIFICATIONS & ISOLATION RULES PASSED SUCCESSFULLY!');
+
 

@@ -1,11 +1,11 @@
-import { createBalanced955Config, SymbolType } from './math/config.js';
-import { CashVortexSlotEngine } from './math/engine.js';
-import { SoundSynth } from './audio/soundSynth.js';
-import { VisualGrid } from './ui/visualGrid.js';
-import { FlyingCoins } from './ui/flyingCoins.js';
-import { WheelOverlay } from './ui/wheelOverlay.js';
-import { BonusView } from './ui/bonusView.js';
-import { DebugPanel } from './ui/debugPanel.js';
+import { createBalanced955Config, SymbolType } from './math/config.js?v=3.3.2';
+import { CashVortexSlotEngine } from './math/engine.js?v=3.3.2';
+import { SoundSynth } from './audio/soundSynth.js?v=3.3.2';
+import { VisualGrid } from './ui/visualGrid.js?v=3.3.2';
+import { FlyingCoins } from './ui/flyingCoins.js?v=3.3.2';
+import { WheelOverlay } from './ui/wheelOverlay.js?v=3.3.2';
+import { BonusView } from './ui/bonusView.js?v=3.3.2';
+import { DebugPanel } from './ui/debugPanel.js?v=3.3.2';
 
 class CashVortexApp {
   constructor() {
@@ -181,6 +181,70 @@ class CashVortexApp {
     else if (feature === 'mega_vortex') this.pendingOverride = { forceSpecialType: 2 };
     else if (feature === 'ultra_vortex') this.pendingOverride = { forceSpecialType: 3 };
     else if (feature === 'jackpot') this.pendingOverride = { forceSpecialType: 0 };
+    else if (feature === 'test_strikes_line') {
+      // Set Column 3 with Mini Strike (0.4x), Coins (0.2x, 0.4x, 1.0x), and Ultra Strike (0.2x)
+      this.engine.grid[0][3].type = SymbolType.MiniStrike;
+      this.engine.grid[0][3].cashValue = 0.4;
+      this.engine.grid[0][3].lifeRemaining = 3;
+      this.engine.grid[0][3].wonThisSpin = false;
+      this.engine.grid[1][3].type = SymbolType.CashCoin;
+      this.engine.grid[1][3].cashValue = 0.2;
+      this.engine.grid[1][3].lifeRemaining = 3;
+      this.engine.grid[1][3].wonThisSpin = false;
+      this.engine.grid[2][3].type = SymbolType.CashCoin;
+      this.engine.grid[2][3].cashValue = 0.4;
+      this.engine.grid[2][3].lifeRemaining = 3;
+      this.engine.grid[2][3].wonThisSpin = false;
+      this.engine.grid[3][3].type = SymbolType.UltraStrike;
+      this.engine.grid[3][3].cashValue = 0.2;
+      this.engine.grid[3][3].lifeRemaining = 3;
+      this.engine.grid[3][3].wonThisSpin = false;
+      this.engine.grid[4][3].type = SymbolType.CashCoin;
+      this.engine.grid[4][3].cashValue = 1.0;
+      this.engine.grid[4][3].lifeRemaining = 3;
+      this.engine.grid[4][3].wonThisSpin = false;
+
+      const telem = { winningLines: [], totalWinCents: 0 };
+      this.engine.evaluateSlingoLines(telem);
+      this.visualGrid.render(this.engine.grid);
+      this.visualGrid.drawWinningLines(telem.winningLines);
+      this.soundSynth.playLineWin();
+      const winDollars = (telem.totalWinCents / 100 * this.bet).toFixed(2);
+      this.setStatus(`★ COL 3 CASH STRIKES WINLINE VERIFIED! WON $${winDollars} ★`);
+      return;
+    }
+    else if (feature === 'test_vortex_line') {
+      // Set Column 2 with Coins (0.2x, 0.6x), Central Wild, Mega Vortex (3.2x), and Mini Vortex (1.0x)
+      this.engine.grid[0][2].type = SymbolType.CashCoin;
+      this.engine.grid[0][2].cashValue = 0.2;
+      this.engine.grid[0][2].lifeRemaining = 3;
+      this.engine.grid[0][2].wonThisSpin = false;
+      this.engine.grid[1][2].type = SymbolType.CashCoin;
+      this.engine.grid[1][2].cashValue = 0.6;
+      this.engine.grid[1][2].lifeRemaining = 3;
+      this.engine.grid[1][2].wonThisSpin = false;
+      this.engine.grid[2][2].type = SymbolType.CentralWildStar;
+      this.engine.grid[2][2].cashValue = 0.0;
+      this.engine.grid[2][2].lifeRemaining = 999999;
+      this.engine.grid[2][2].wonThisSpin = false;
+      this.engine.grid[3][2].type = SymbolType.MegaVortex;
+      this.engine.grid[3][2].cashValue = 3.2;
+      this.engine.grid[3][2].lifeRemaining = 3;
+      this.engine.grid[3][2].wonThisSpin = false;
+      this.engine.grid[4][2].type = SymbolType.MiniVortex;
+      this.engine.grid[4][2].cashValue = 1.0;
+      this.engine.grid[4][2].lifeRemaining = 3;
+      this.engine.grid[4][2].wonThisSpin = false;
+
+      const telem = { winningLines: [], totalWinCents: 0 };
+      this.engine.evaluateSlingoLines(telem);
+      this.visualGrid.render(this.engine.grid);
+      this.visualGrid.drawWinningLines(telem.winningLines);
+      this.soundSynth.playLineWin();
+      const winDollars = (telem.totalWinCents / 100 * this.bet).toFixed(2);
+      this.setStatus(`★ COL 2 CASH VORTEX WINLINE VERIFIED! WON $${winDollars} ★`);
+      return;
+    }
 
     this.setStatus(`FORCED NEXT FEATURE: ${feature.toUpperCase()}`);
   }
@@ -280,7 +344,8 @@ class CashVortexApp {
         for (const strike of telemetry.strikeActions) {
           const tier = strike.strikeCell.type === SymbolType.MiniStrike ? 'MINI' : strike.strikeCell.type === SymbolType.MegaStrike ? 'MEGA' : 'ULTRA';
           const count = strike.affectedCells ? strike.affectedCells.length : 0;
-          this.setStatus(`⚡ ${tier} STRIKE FIRING! APPLYING +${strike.strikeCell.value.toFixed(1)}x TO ${count} COINS...`);
+          const strikeVal = (Number(strike.strikeCell?.value) || 0).toFixed(1);
+          this.setStatus(`⚡ ${tier} STRIKE FIRING! APPLYING +${strikeVal}x TO ${count} COINS...`);
           await new Promise(r => setTimeout(r, 200 * speedMult));
           await this.visualGrid.animateStrikeFlyAndCountUp(
             strike,
@@ -297,7 +362,9 @@ class CashVortexApp {
         for (const vortex of telemetry.vortexActions) {
           const tier = vortex.vortexCell.type === SymbolType.MiniVortex ? 'MINI' : vortex.vortexCell.type === SymbolType.MegaVortex ? 'MEGA' : 'ULTRA';
           const count = vortex.collectedCells ? vortex.collectedCells.length : 0;
-          this.setStatus(`🌀 ${tier} VORTEX SUCTIONING ${count} COINS (BASE ${vortex.vortexCell.basePay.toFixed(1)}x ➔ ${vortex.finalValue.toFixed(1)}x)...`);
+          const basePay = (Number(vortex.vortexCell?.basePay) || 0).toFixed(1);
+          const finalVal = (Number(vortex.finalValue) || 0).toFixed(1);
+          this.setStatus(`🌀 ${tier} VORTEX SUCTIONING ${count} COINS (BASE ${basePay}x ➔ ${finalVal}x)...`);
           await new Promise(r => setTimeout(r, 200 * speedMult));
           await this.visualGrid.animateVortexSuctionAndCountUp(
             vortex,
@@ -325,7 +392,7 @@ class CashVortexApp {
         this.visualGrid.render(this.engine.grid);
         this.visualGrid.drawWinningLines(telemetry.winningLines);
         this.soundSynth.playLineWin();
-        await new Promise(r => setTimeout(r, 600 * speedMult));
+        await new Promise(r => setTimeout(r, Math.max(700, 1000 * speedMult)));
       }
 
       // Step 8: Center Wild Wheel Bonus (if triggered)
@@ -384,7 +451,7 @@ class CashVortexApp {
 
     } catch (err) {
       console.error('Spin Execution Error:', err);
-      this.setStatus('READY. PRESS SPIN TO PLAY!');
+      this.setStatus(`SPIN ERROR: ${err?.message || err}`);
     } finally {
       // Guarantees spin button is NEVER permanently disabled
       this.isSpinning = false;

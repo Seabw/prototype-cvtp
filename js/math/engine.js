@@ -520,11 +520,11 @@ export class CashVortexSlotEngine {
         const c = idx % 5;
         const cell = this.grid[r][c];
 
-        if (cell.type === SymbolType.Blank) {
+        if (!cell || cell.type === SymbolType.Blank) {
           lineComplete = false;
           break;
         }
-        lineCashSum += cell.cashValue;
+        lineCashSum += Number(cell.cashValue) || 0.0;
       }
 
       if (lineComplete) {

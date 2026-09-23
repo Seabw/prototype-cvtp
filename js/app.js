@@ -1,4 +1,4 @@
-import { createBalanced955Config } from './math/config.js';
+import { createBalanced955Config, SymbolType } from './math/config.js';
 import { CashVortexSlotEngine } from './math/engine.js';
 import { SoundSynth } from './audio/soundSynth.js';
 import { VisualGrid } from './ui/visualGrid.js';
@@ -278,7 +278,7 @@ class CashVortexApp {
       // Step 4: Strikes Execution (Flying energy boost & count-up)
       if (telemetry.strikeActions && telemetry.strikeActions.length > 0) {
         for (const strike of telemetry.strikeActions) {
-          const tier = strike.strikeCell.type.replace('Strike', '').toUpperCase();
+          const tier = strike.strikeCell.type === SymbolType.MiniStrike ? 'MINI' : strike.strikeCell.type === SymbolType.MegaStrike ? 'MEGA' : 'ULTRA';
           const count = strike.affectedCells ? strike.affectedCells.length : 0;
           this.setStatus(`⚡ ${tier} STRIKE FIRING! APPLYING +${strike.strikeCell.value.toFixed(1)}x TO ${count} COINS...`);
           await new Promise(r => setTimeout(r, 200 * speedMult));
@@ -295,7 +295,7 @@ class CashVortexApp {
       // Step 5: Vortexes Execution (Coins fly in & vortex counts up)
       if (telemetry.vortexActions && telemetry.vortexActions.length > 0) {
         for (const vortex of telemetry.vortexActions) {
-          const tier = vortex.vortexCell.type.replace('Vortex', '').toUpperCase();
+          const tier = vortex.vortexCell.type === SymbolType.MiniVortex ? 'MINI' : vortex.vortexCell.type === SymbolType.MegaVortex ? 'MEGA' : 'ULTRA';
           const count = vortex.collectedCells ? vortex.collectedCells.length : 0;
           this.setStatus(`🌀 ${tier} VORTEX SUCTIONING ${count} COINS (BASE ${vortex.vortexCell.basePay.toFixed(1)}x ➔ ${vortex.finalValue.toFixed(1)}x)...`);
           await new Promise(r => setTimeout(r, 200 * speedMult));
@@ -322,9 +322,10 @@ class CashVortexApp {
       // Step 7: Slingo Lines Evaluation
       if (telemetry.winningLines && telemetry.winningLines.length > 0) {
         this.setStatus(`CONGRATULATIONS! ${telemetry.winningLines.length} SLINGO LINE(S) WON!`);
+        this.visualGrid.render(this.engine.grid);
         this.visualGrid.drawWinningLines(telemetry.winningLines);
         this.soundSynth.playLineWin();
-        await new Promise(r => setTimeout(r, 500 * speedMult));
+        await new Promise(r => setTimeout(r, 600 * speedMult));
       }
 
       // Step 8: Center Wild Wheel Bonus (if triggered)

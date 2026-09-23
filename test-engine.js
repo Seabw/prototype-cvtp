@@ -66,4 +66,52 @@ console.log(`Wheel 3 (Ultra) Hits:  ${wheel3Hits} (1 in ${(totalSpins / (wheel3H
 console.log(`Center Wild Hits:      ${centerHits} (1 in ${(totalSpins / (centerHits || 1)).toFixed(1)})`);
 console.log(`Lock & Slingo Hits:    ${bonusHits} (1 in ${(totalSpins / (bonusHits || 1)).toFixed(1)})`);
 console.log(`Jackpot Coins Landed:  ${jackpotHits}`);
+console.log('--- VERIFYING CASH VORTEX & CASH STRIKE IN WIN LINES ---');
+const testEngine = new CashVortexSlotEngine(config);
+
+// Test 1: Column 2 (Line 8: [2, 7, 12, 17, 22]) with Mini Vortex and Mega Vortex matching user screenshot
+testEngine.grid[0][2].type = 2; // CashCoin
+testEngine.grid[0][2].cashValue = 0.2;
+testEngine.grid[1][2].type = 2; // CashCoin
+testEngine.grid[1][2].cashValue = 0.6;
+testEngine.grid[2][2].type = 0; // CentralWildStar
+testEngine.grid[2][2].cashValue = 0.0;
+testEngine.grid[3][2].type = 5; // MegaVortex
+testEngine.grid[3][2].cashValue = 3.2;
+testEngine.grid[4][2].type = 4; // MiniVortex
+testEngine.grid[4][2].cashValue = 1.0;
+
+const telemetry1 = { totalWinCents: 0, winningLines: [] };
+testEngine.evaluateSlingoLines(telemetry1);
+
+if (telemetry1.winningLines.length !== 1 || telemetry1.winningLines[0].lineId !== 8) {
+  throw new Error('FAILED: Column 2 with Mega Vortex and Mini Vortex was not recognized as a win line!');
+}
+if (telemetry1.winningLines[0].payoutCents !== 500) {
+  throw new Error(`FAILED: Column 2 payout expected 500 cents ($5.00), got ${telemetry1.winningLines[0].payoutCents}`);
+}
+console.log('✅ Test 1 PASSED: Column 2 with Mega Vortex (3.2x) and Mini Vortex (1.0x) recognized as Line 8 win with $5.00 payout!');
+
+// Test 2: Row 0 (Line 1: [0, 1, 2, 3, 4]) with Mini Strike, Mega Strike, and Ultra Strike
+testEngine.grid[0][0].type = 7; // MiniStrike
+testEngine.grid[0][0].cashValue = 2.0;
+testEngine.grid[0][1].type = 8; // MegaStrike
+testEngine.grid[0][1].cashValue = 3.0;
+testEngine.grid[0][2].type = 9; // UltraStrike
+testEngine.grid[0][2].cashValue = 5.0;
+testEngine.grid[0][3].type = 2; // CashCoin
+testEngine.grid[0][3].cashValue = 1.0;
+testEngine.grid[0][4].type = 2; // CashCoin
+testEngine.grid[0][4].cashValue = 1.0;
+
+const telemetry2 = { totalWinCents: 0, winningLines: [] };
+testEngine.evaluateSlingoLines(telemetry2);
+
+const line1Win = telemetry2.winningLines.find(l => l.lineId === 1);
+if (!line1Win || line1Win.payoutCents !== 1200) {
+  throw new Error('FAILED: Row 0 with Cash Strikes was not recognized as a win line!');
+}
+console.log('✅ Test 2 PASSED: Row 0 with Strikes (Mini, Mega, Ultra) recognized as Line 1 win with $12.00 payout!');
+
 console.log('✅ ALL VERIFICATIONS & ISOLATION RULES PASSED SUCCESSFULLY!');
+

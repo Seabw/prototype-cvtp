@@ -1,9 +1,10 @@
 export class DebugPanel {
-  constructor(panelElement, engine, onTriggerForce, onRunBatch) {
+  constructor(panelElement, engine, onTriggerForce, onRunBatch, onResetBoard) {
     this.panel = panelElement;
     this.engine = engine;
     this.onTriggerForce = onTriggerForce;
     this.onRunBatch = onRunBatch;
+    this.onResetBoard = onResetBoard;
     this.logContent = panelElement.querySelector('.debug-log-content');
     this.statsElement = panelElement.querySelector('.debug-stats-content');
     this.isOpen = false;
@@ -35,6 +36,21 @@ export class DebugPanel {
         this.onTriggerForce(feature);
       });
     });
+
+    // Board Presets
+    const starterBtn = this.panel.querySelector('#debug-reset-starter');
+    if (starterBtn) {
+      starterBtn.addEventListener('click', () => {
+        if (this.onResetBoard) this.onResetBoard(true);
+      });
+    }
+
+    const emptyBtn = this.panel.querySelector('#debug-reset-empty');
+    if (emptyBtn) {
+      emptyBtn.addEventListener('click', () => {
+        if (this.onResetBoard) this.onResetBoard(false);
+      });
+    }
 
     // Batch run buttons
     this.panel.querySelectorAll('[data-batch-spins]').forEach(btn => {

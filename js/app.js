@@ -95,7 +95,8 @@ class CashVortexApp {
       this.dom.debugDrawer,
       this.engine,
       feature => this.handleForceFeature(feature),
-      count => this.handleRunBatch(count)
+      count => this.handleRunBatch(count),
+      useStarter => this.handleResetBoard(useStarter)
     );
   }
 
@@ -516,9 +517,18 @@ class CashVortexApp {
     this.balance += this.stats.totalWon - spinsCount * this.bet;
     this.updateHud();
     if (this.debugPanel) this.debugPanel.updateBatchStats(this.stats);
-    this.visualGrid.render(this.engine.grid);
-
     this.setStatus(`BATCH OF ${spinsCount.toLocaleString()} SPINS COMPLETED IN ${elapsed}s! RTP: ${this.stats.rtp.toFixed(2)}%`);
+  }
+
+  handleResetBoard(useStarterBoard) {
+    if (this.isSpinning) return;
+    this.engine.reset(useStarterBoard);
+    this.visualGrid.render(this.engine.grid);
+    this.flyingCoins.updatePotBadges([0, 0, 0]);
+    this.dom.win.textContent = '$0.00';
+    this.setStatus(useStarterBoard 
+      ? 'Board reset to 6-Coin Diamond Crest (Option A)!' 
+      : 'Board reset to empty!');
   }
 }
 

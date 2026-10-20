@@ -36,7 +36,7 @@ export class CashVortexSlotEngine {
     this.initializeGrid();
   }
 
-  initializeGrid() {
+  initializeGrid(useStarterBoard = true) {
     this.grid = [];
     for (let r = 0; r < 5; r++) {
       this.grid[r] = [];
@@ -44,11 +44,65 @@ export class CashVortexSlotEngine {
         this.grid[r][c] = new GridCell(r, c);
       }
     }
+
+    if (useStarterBoard) {
+      this.applyStarterBoard(1);
+    }
   }
 
-  reset() {
+  /**
+   * Apply Symmetrical Starter Board Layout
+   * @param {number} layoutId 1 = Option A (6-Coin Diamond Crest), 2 = Cross, 3 = Corner, 4 = Octagram
+   */
+  applyStarterBoard(layoutId = 1) {
+    if (layoutId === 1) {
+      // Option A: 6-Coin Diamond Crest (All 1.0x stake, symmetrical lifespans 1, 2, 3)
+      this.setStarterCoin(0, 2, 1.0, 1); // Top tip (Life 1: expires on Spin 1 -> pot flight)
+      this.setStarterCoin(4, 2, 1.0, 1); // Bottom tip (Life 1: expires on Spin 1 -> pot flight)
+      this.setStarterCoin(1, 1, 1.0, 2); // Top-left shoulder (Life 2: expires on Spin 2)
+      this.setStarterCoin(3, 3, 1.0, 2); // Bottom-right shoulder (Life 2: expires on Spin 2)
+      this.setStarterCoin(1, 3, 1.0, 3); // Top-right shoulder (Life 3: expires on Spin 3)
+      this.setStarterCoin(3, 1, 1.0, 3); // Bottom-left shoulder (Life 3: expires on Spin 3)
+    } else if (layoutId === 2) {
+      // Option B: 4-Coin Celestial Cross
+      this.setStarterCoin(0, 2, 1.0, 1);
+      this.setStarterCoin(4, 2, 1.0, 1);
+      this.setStarterCoin(2, 0, 1.0, 2);
+      this.setStarterCoin(2, 4, 1.0, 2);
+    } else if (layoutId === 3) {
+      // Option C: 4-Coin Corner Shield
+      this.setStarterCoin(1, 1, 1.0, 1);
+      this.setStarterCoin(3, 3, 1.0, 1);
+      this.setStarterCoin(1, 3, 1.0, 2);
+      this.setStarterCoin(3, 1, 1.0, 2);
+    } else if (layoutId === 4) {
+      // Option D: 8-Coin Grand Octagram
+      this.setStarterCoin(0, 2, 1.0, 1);
+      this.setStarterCoin(4, 2, 1.0, 1);
+      this.setStarterCoin(1, 1, 1.0, 2);
+      this.setStarterCoin(1, 3, 1.0, 2);
+      this.setStarterCoin(3, 1, 1.0, 2);
+      this.setStarterCoin(3, 3, 1.0, 2);
+      this.setStarterCoin(2, 0, 1.0, 3);
+      this.setStarterCoin(2, 4, 1.0, 3);
+    }
+  }
+
+  setStarterCoin(r, c, val = 1.0, life = 1) {
+    if (!this.grid[r] || !this.grid[r][c]) return;
+    const cell = this.grid[r][c];
+    cell.type = SymbolType.CashCoin;
+    cell.cashValue = val;
+    cell.lifeRemaining = life;
+    cell.jackpotType = null;
+    cell.wonThisSpin = false;
+    cell.justLanded = false;
+    cell.targetAffectedCount = 0;
+  }
+
+  reset(useStarterBoard = true) {
     this.spinsInCurrentStage = 0;
-    this.initializeGrid();
+    this.initializeGrid(useStarterBoard);
   }
 
   isValuableTarget(type) {

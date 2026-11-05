@@ -144,12 +144,13 @@ export class WheelOverlay {
       let label = prize.prizeString || prize.label || '';
 
       let fontSize = 18;
-      if (label.length > 15) fontSize = 13;
+      if (label.length > 18) fontSize = 11.5;
+      else if (label.length > 15) fontSize = 13;
       else if (label.length > 11) fontSize = 15;
 
       if (isFinal && i === targetIndex) {
         ctx.fillStyle = '#0f1026';
-        ctx.font = `bold ${fontSize + 2}px Outfit, sans-serif`;
+        ctx.font = `bold ${fontSize + 1.5}px Outfit, sans-serif`;
       } else {
         ctx.fillStyle = '#ffffff';
         ctx.font = `bold ${fontSize}px Outfit, sans-serif`;
@@ -157,7 +158,7 @@ export class WheelOverlay {
 
       ctx.shadowColor = 'rgba(0,0,0,0.8)';
       ctx.shadowBlur = 4;
-      ctx.fillText(label, radius - 24, 0);
+      ctx.fillText(label, radius - 18, 0);
       ctx.restore();
     }
 

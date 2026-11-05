@@ -1,5 +1,5 @@
-import { SymbolType, WheelPrizeType, SLINGO_LINES } from './config.js';
-import { Rng } from './rng.js';
+import { SymbolType, WheelPrizeType, SLINGO_LINES } from './config.js?v=3.4.0';
+import { Rng } from './rng.js?v=3.4.0';
 
 export class GridCell {
   constructor(row, col) {
@@ -395,7 +395,7 @@ export class CashVortexSlotEngine {
 
     // Step 6: Triggered Wheel Bonus Plays AFTER Spin Finishes & Reel Powers Have Finished
     if (triggeredWheel > 0) {
-      this.executePotWheelBonus(triggeredWheel, newlyLandedCells, telemetry);
+      this.executePotWheelBonus(triggeredWheel, newlyLandedCells, telemetry, forcedOverrides);
     }
 
     // Step 7: Symbol Life Cycle Reset for Line-Sharing Existing Symbols
@@ -409,16 +409,6 @@ export class CashVortexSlotEngine {
       telemetry.lockAndSlingoResult = this.playLockAndSlingoBonus();
       telemetry.totalWinCents += telemetry.lockAndSlingoResult.totalBonusWinCents;
     }
-
-    // Snapshot newly landed for UI telemetry
-    telemetry.newlyLanded = newlyLandedCells.map(c => ({
-      row: c.row,
-      col: c.col,
-      type: c.type,
-      cashValue: c.cashValue,
-      jackpotType: c.jackpotType,
-      lifeRemaining: c.lifeRemaining
-    }));
 
     // Snapshot newly landed for UI telemetry
     telemetry.newlyLanded = newlyLandedCells.map(c => ({
@@ -598,7 +588,7 @@ export class CashVortexSlotEngine {
     }
   }
 
-  executePotWheelBonus(triggeredWheel, newlyLandedCells, telemetry) {
+  executePotWheelBonus(triggeredWheel, newlyLandedCells, telemetry, forcedOverrides = {}) {
     const weightTable =
       triggeredWheel === 1
         ? this.config.miniWheelWeightTable
@@ -615,12 +605,18 @@ export class CashVortexSlotEngine {
 
     if (!weightTable || !prizeList || prizeList.length === 0) return;
 
-    const prizeIdx = weightTable.sample(this.rng);
+    let prizeIdx = weightTable.sample(this.rng);
+    if (forcedOverrides && forcedOverrides.forceBonus) {
+      const lsIdx = prizeList.findIndex(p => p.type === WheelPrizeType.LockAndSlingo);
+      if (lsIdx >= 0) prizeIdx = lsIdx;
+    }
     const prize = prizeList[prizeIdx];
 
     let featureWinCents = 0;
     const affectedCells = [];
     let placedSymbol = null;
+    let wheelStrikeAction = null;
+    let wheelVortexAction = null;
 
     // Remaining empty spaces (Blanks) on the 5x5 grid
     const currentEmpty = [];
@@ -653,7 +649,7 @@ export class CashVortexSlotEngine {
           strikeCell.justLanded = true;
           strikeCell.wonThisSpin = false;
           if (newlyLandedCells) newlyLandedCells.push(strikeCell);
-          placedSymbol = { row: pos.r, col: pos.c, type: strikeCell.type, cashValue: strikeCell.cashValue };
+          placedSymbol = { row: pos.r, col: pos.c, type: strikeCell.type, cashValue: strikeCell.cashValue, basePay: strikeVal };
         } else {
           strikeCell = { row: 2, col: 2, type: SymbolType.UltraStrike, cashValue: strikeVal };
         }
@@ -664,7 +660,7 @@ export class CashVortexSlotEngine {
             if (t.type !== SymbolType.Blank && t.type !== SymbolType.CentralWildStar && t.type !== SymbolType.JackpotCoin) {
               const prev = t.cashValue;
               t.cashValue = Math.round((t.cashValue + strikeVal) * 100) / 100;
-              affectedCells.push({ row: t.row, col: t.col, prev, newVal: t.cashValue });
+              affectedCells.push({ row: t.row, col: t.col, prevVal: prev, newVal: t.cashValue });
             }
           }
         } else if (prize.type === WheelPrizeType.MegaStrike) {
@@ -673,7 +669,7 @@ export class CashVortexSlotEngine {
             if (t !== strikeCell && t.type !== SymbolType.Blank && t.type !== SymbolType.CentralWildStar && t.type !== SymbolType.JackpotCoin) {
               const prev = t.cashValue;
               t.cashValue = Math.round((t.cashValue + strikeVal) * 100) / 100;
-              affectedCells.push({ row: t.row, col: t.col, prev, newVal: t.cashValue });
+              affectedCells.push({ row: t.row, col: t.col, prevVal: prev, newVal: t.cashValue });
             }
           }
         } else {
@@ -684,11 +680,15 @@ export class CashVortexSlotEngine {
               if (t !== strikeCell && t.type !== SymbolType.Blank && t.type !== SymbolType.CentralWildStar && t.type !== SymbolType.JackpotCoin) {
                 const prev = t.cashValue;
                 t.cashValue = Math.round((t.cashValue + strikeVal) * 100) / 100;
-                affectedCells.push({ row: r, col: c, prev, newVal: t.cashValue });
+                affectedCells.push({ row: r, col: c, prevVal: prev, newVal: t.cashValue });
               }
             }
           }
         }
+        wheelStrikeAction = {
+          strikeCell: { row: strikeCell.row, col: strikeCell.col, type: strikeCell.type, value: strikeVal },
+          affectedCells
+        };
         break;
       }
 
@@ -720,7 +720,7 @@ export class CashVortexSlotEngine {
           vortexCell.justLanded = true;
           vortexCell.wonThisSpin = false;
           if (newlyLandedCells) newlyLandedCells.push(vortexCell);
-          placedSymbol = { row: pos.r, col: pos.c, type: vortexCell.type, cashValue: vortexCell.cashValue };
+          placedSymbol = { row: pos.r, col: pos.c, type: vortexCell.type, cashValue: vortexCell.cashValue, basePay: vortexBase };
         } else {
           vortexCell = { row: 2, col: 2, type: SymbolType.UltraVortex, cashValue: vortexBase };
         }
@@ -731,7 +731,7 @@ export class CashVortexSlotEngine {
           for (const t of targets) {
             if (t.type !== SymbolType.Blank && t.type !== SymbolType.CentralWildStar && t.type !== SymbolType.JackpotCoin) {
               gatheredSum += t.cashValue;
-              if (t.cashValue > 0) affectedCells.push({ row: t.row, col: t.col, prev: t.cashValue, newVal: t.cashValue });
+              if (t.cashValue > 0) affectedCells.push({ row: t.row, col: t.col, val: t.cashValue, prev: t.cashValue, newVal: t.cashValue });
             }
           }
         } else if (prize.type === WheelPrizeType.MegaVortex) {
@@ -739,7 +739,7 @@ export class CashVortexSlotEngine {
           for (const t of targets) {
             if (t !== vortexCell && t.type !== SymbolType.Blank && t.type !== SymbolType.CentralWildStar && t.type !== SymbolType.JackpotCoin) {
               gatheredSum += t.cashValue;
-              if (t.cashValue > 0) affectedCells.push({ row: t.row, col: t.col, prev: t.cashValue, newVal: t.cashValue });
+              if (t.cashValue > 0) affectedCells.push({ row: t.row, col: t.col, val: t.cashValue, prev: t.cashValue, newVal: t.cashValue });
             }
           }
         } else {
@@ -749,12 +749,17 @@ export class CashVortexSlotEngine {
               const t = this.grid[r][c];
               if (t !== vortexCell && t.type !== SymbolType.Blank && t.type !== SymbolType.CentralWildStar && t.type !== SymbolType.JackpotCoin) {
                 gatheredSum += t.cashValue;
-                if (t.cashValue > 0) affectedCells.push({ row: r, col: c, prev: t.cashValue, newVal: t.cashValue });
+                if (t.cashValue > 0) affectedCells.push({ row: r, col: c, val: t.cashValue, prev: t.cashValue, newVal: t.cashValue });
               }
             }
           }
         }
         vortexCell.cashValue = Math.round((vortexCell.cashValue + gatheredSum) * 100) / 100;
+        wheelVortexAction = {
+          vortexCell: { row: vortexCell.row, col: vortexCell.col, type: vortexCell.type, basePay: vortexBase },
+          collectedCells: affectedCells,
+          finalValue: vortexCell.cashValue
+        };
         break;
       }
 
@@ -803,16 +808,9 @@ export class CashVortexSlotEngine {
       prize,
       featureWinCents,
       affectedCells,
-      placedSymbol
-    };
-  }
-
-    telemetry.potWheelPrize = {
-      potIndex: triggeredWheel,
-      prizeIndex: prizeIdx,
-      prize,
-      featureWinCents,
-      affectedCells
+      placedSymbol,
+      wheelStrikeAction,
+      wheelVortexAction
     };
   }
 

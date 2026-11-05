@@ -1,11 +1,11 @@
-import { createBalanced955Config, SymbolType } from './math/config.js?v=3.3.2';
-import { CashVortexSlotEngine } from './math/engine.js?v=3.3.2';
-import { SoundSynth } from './audio/soundSynth.js?v=3.3.2';
-import { VisualGrid } from './ui/visualGrid.js?v=3.3.2';
-import { FlyingCoins } from './ui/flyingCoins.js?v=3.3.2';
-import { WheelOverlay } from './ui/wheelOverlay.js?v=3.3.2';
-import { BonusView } from './ui/bonusView.js?v=3.3.2';
-import { DebugPanel } from './ui/debugPanel.js?v=3.3.2';
+import { createBalanced955Config, SymbolType } from './math/config.js?v=3.4.0';
+import { CashVortexSlotEngine } from './math/engine.js?v=3.4.0';
+import { SoundSynth } from './audio/soundSynth.js?v=3.4.0';
+import { VisualGrid } from './ui/visualGrid.js?v=3.4.0';
+import { FlyingCoins } from './ui/flyingCoins.js?v=3.4.0';
+import { WheelOverlay } from './ui/wheelOverlay.js?v=3.4.0';
+import { BonusView } from './ui/bonusView.js?v=3.4.0';
+import { DebugPanel } from './ui/debugPanel.js?v=3.4.0';
 
 class CashVortexApp {
   constructor() {
@@ -174,7 +174,7 @@ class CashVortexApp {
     else if (feature === 'wheel2') this.pendingOverride = { forceWheel: 2 };
     else if (feature === 'wheel3') this.pendingOverride = { forceWheel: 3 };
     else if (feature === 'center') this.pendingOverride = { forceCenterWild: true };
-    else if (feature === 'bonus') this.pendingOverride = { forceWheel: 2 };
+    else if (feature === 'bonus') this.pendingOverride = { forceWheel: 2, forceBonus: true };
     else if (feature === 'mini_strike') this.pendingOverride = { forceSpecialType: 4 };
     else if (feature === 'mega_strike') this.pendingOverride = { forceSpecialType: 5 };
     else if (feature === 'ultra_strike') this.pendingOverride = { forceSpecialType: 6 };
@@ -386,9 +386,38 @@ class CashVortexApp {
           const sym = telemetry.potWheelPrize.placedSymbol;
           const pName = telemetry.potWheelPrize.prize.prizeString;
           this.setStatus(`🎯 WHEEL AWARDED ${pName}! PLACED ON REELS AT (${sym.row + 1}, ${sym.col + 1})`);
-          this.visualGrid.render(this.engine.grid);
+
+          if (telemetry.postReelActionGrid && telemetry.postReelActionGrid[sym.row]?.[sym.col]) {
+            const pCell = telemetry.postReelActionGrid[sym.row][sym.col];
+            pCell.type = sym.type;
+            pCell.cashValue = sym.basePay !== undefined ? sym.basePay : sym.cashValue;
+            pCell.lifeRemaining = 3;
+            pCell.justLanded = true;
+            this.visualGrid.render(telemetry.postReelActionGrid);
+          } else {
+            this.visualGrid.render(this.engine.grid);
+          }
           this.soundSynth.playSpecialSymbolLand();
-          await new Promise(r => setTimeout(r, 600 * speedMult));
+          await new Promise(r => setTimeout(r, 450 * speedMult));
+
+          if (telemetry.potWheelPrize.wheelStrikeAction) {
+            await this.visualGrid.animateStrikeFlyAndCountUp(
+              telemetry.potWheelPrize.wheelStrikeAction,
+              this.dom.coinFlightContainer,
+              this.soundSynth,
+              speedMult
+            );
+            await new Promise(r => setTimeout(r, 300 * speedMult));
+          } else if (telemetry.potWheelPrize.wheelVortexAction) {
+            await this.visualGrid.animateVortexSuctionAndCountUp(
+              telemetry.potWheelPrize.wheelVortexAction,
+              this.dom.coinFlightContainer,
+              this.soundSynth,
+              speedMult
+            );
+            await new Promise(r => setTimeout(r, 350 * speedMult));
+          }
+          this.visualGrid.render(this.engine.grid);
         } else {
           this.visualGrid.render(this.engine.grid);
         }

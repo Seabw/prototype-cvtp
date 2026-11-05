@@ -1,4 +1,4 @@
-import { SymbolType, SLINGO_LINES } from '../math/config.js';
+import { SymbolType, SLINGO_LINES } from '../math/config.js?v=3.4.0';
 
 export class VisualGrid {
   constructor(gridElement, svgLinesElement) {

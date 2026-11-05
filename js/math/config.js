@@ -73,9 +73,12 @@ function parsePrizeDef(id, prizeStr, weight) {
   };
 
   const s = prizeStr.trim();
-  if (s.toLowerCase().startsWith('x')) {
+  if (s.toLowerCase().startsWith('x') || s.toLowerCase().includes('multiplier')) {
     prize.type = WheelPrizeType.Multiplier;
-    prize.parameterValue = parseFloat(s.slice(1)) || 2.0;
+    const match = s.match(/\d+(\.\d+)?/);
+    prize.parameterValue = match ? parseFloat(match[0]) : 2.0;
+  } else if (s.toLowerCase().includes('upgrade')) {
+    prize.type = WheelPrizeType.Upgrade;
   } else if (s.toLowerCase().includes('lock') || s.toLowerCase().includes('slingo')) {
     prize.type = WheelPrizeType.LockAndSlingo;
   } else if (s.toLowerCase().includes('jackpot')) {
@@ -83,6 +86,32 @@ function parsePrizeDef(id, prizeStr, weight) {
     if (s.toLowerCase().includes('mega')) prize.jackpotType = 'Mega';
     else if (s.toLowerCase().includes('ultra')) prize.jackpotType = 'Ultra';
     else prize.jackpotType = 'Mini';
+  } else if (s.toLowerCase().includes('vortex')) {
+    const match = s.match(/\d+(\.\d+)?/);
+    const val = match ? parseFloat(match[0]) : 1.0;
+    if (s.toLowerCase().includes('mini')) {
+      prize.type = WheelPrizeType.MiniVortex;
+      prize.parameterValue = val;
+    } else if (s.toLowerCase().includes('mega')) {
+      prize.type = WheelPrizeType.MegaVortex;
+      prize.parameterValue = (val === 1.0 && !match) ? 2.0 : val;
+    } else {
+      prize.type = WheelPrizeType.UltraVortex;
+      prize.parameterValue = (val === 1.0 && !match) ? 5.0 : val;
+    }
+  } else if (s.toLowerCase().includes('strike') || s.toLowerCase().includes('strke')) {
+    const match = s.match(/\d+(\.\d+)?/);
+    const val = match ? parseFloat(match[0]) : 1.0;
+    if (s.toLowerCase().includes('mini')) {
+      prize.type = WheelPrizeType.MiniStrike;
+      prize.parameterValue = val;
+    } else if (s.toLowerCase().includes('mega')) {
+      prize.type = WheelPrizeType.MegaStrike;
+      prize.parameterValue = (val === 1.0 && !match) ? 2.0 : val;
+    } else {
+      prize.type = WheelPrizeType.UltraStrike;
+      prize.parameterValue = val;
+    }
   } else if (!isNaN(parseFloat(s))) {
     prize.type = WheelPrizeType.InstantCash;
     prize.parameterValue = parseFloat(s);
@@ -111,7 +140,7 @@ export function createBalanced955Config() {
     // Dynamic single-roll trigger multipliers
     xWheelTriggerBaseWeightWheel1: 3430,
     xWheelTriggerBaseWeightWheel2: 825,
-    xWheelTriggerBaseWeightWheel3: 212,
+    xWheelTriggerBaseWeightWheel3: 132,
     xWheelTriggerNoTriggerWeight: 100000,
 
     // Base Game Table Selections (Low / Med / High)
@@ -161,44 +190,46 @@ export function createBalanced955Config() {
     megaVortexBasePay: 2.0,
     ultraVortexBasePay: 5.0,
 
-    // Reel-Top Mini Wheel (9 slices)
+    // Reel-Top Mini Wheel (10 slices)
     miniWheelPrizes: [
-      parsePrizeDef(0, 'x2', 500),
-      parsePrizeDef(1, '5', 210),
-      parsePrizeDef(2, '1', 1200),
-      parsePrizeDef(3, 'x3', 300),
-      parsePrizeDef(4, 'Mini Jackpot', 460),
-      parsePrizeDef(5, '3', 500),
-      parsePrizeDef(6, 'x2', 500),
-      parsePrizeDef(7, '2', 900),
-      parsePrizeDef(8, '4', 350)
+      parsePrizeDef(0, 'Mini Cash Strike +0.5', 1350),
+      parsePrizeDef(1, 'x2 Multiplier', 850),
+      parsePrizeDef(2, 'Mini Cash Vortex +1.0', 1150),
+      parsePrizeDef(3, 'Mega Cash Strike +1.0', 800),
+      parsePrizeDef(4, 'Mini Jackpot (5x)', 500),
+      parsePrizeDef(5, 'Mini Cash Strike +1.0', 1100),
+      parsePrizeDef(6, 'x2 Multiplier', 850),
+      parsePrizeDef(7, 'Mega Cash Vortex +1.0', 750),
+      parsePrizeDef(8, 'Ultra Cash Strike +1.0', 500),
+      parsePrizeDef(9, 'Mini Cash Vortex +0.5', 1150)
     ],
 
-    // Reel-Top Mega Wheel (9 slices)
+    // Reel-Top Mega Wheel (10 slices)
     megaWheelPrizes: [
-      parsePrizeDef(0, 'x4', 300),
-      parsePrizeDef(1, 'Lock & Slingo', 300),
-      parsePrizeDef(2, '2', 500),
-      parsePrizeDef(3, 'x5', 250),
-      parsePrizeDef(4, 'Mini Jackpot', 350),
-      parsePrizeDef(5, '3', 400),
-      parsePrizeDef(6, 'x3', 400),
-      parsePrizeDef(7, 'Mega Jackpot', 65),
-      parsePrizeDef(8, '4', 300)
+      parsePrizeDef(0, 'Mega Cash Strike +1.5', 400),
+      parsePrizeDef(1, 'x3 Multiplier', 350),
+      parsePrizeDef(2, 'Mega Cash Vortex +2.0', 350),
+      parsePrizeDef(3, 'Lock & Slingo', 300),
+      parsePrizeDef(4, 'Mega Jackpot (50x)', 65),
+      parsePrizeDef(5, 'Ultra Cash Strike +2.0', 250),
+      parsePrizeDef(6, 'x2 Multiplier', 350),
+      parsePrizeDef(7, 'Ultra Cash Vortex +2.5', 250),
+      parsePrizeDef(8, 'Mini Cash Vortex +2.0', 300),
+      parsePrizeDef(9, 'Mega Cash Strike +2.0', 385)
     ],
 
     // Reel-Top Ultra Wheel (10 slices)
     ultraWheelPrizes: [
-      parsePrizeDef(0, 'x5', 300),
-      parsePrizeDef(1, 'Mini Jackpot', 200),
-      parsePrizeDef(2, 'x10', 200),
-      parsePrizeDef(3, 'Mega Jackpot', 80),
-      parsePrizeDef(4, 'x5', 300),
-      parsePrizeDef(5, 'Lock & Slingo', 350),
-      parsePrizeDef(6, 'x10', 200),
-      parsePrizeDef(7, 'Ultra Jackpot', 12),
-      parsePrizeDef(8, 'x5', 300),
-      parsePrizeDef(9, 'Lock & Slingo', 350)
+      parsePrizeDef(0, 'Ultra Cash Strike +3.0', 300),
+      parsePrizeDef(1, 'x5 Multiplier', 250),
+      parsePrizeDef(2, 'Ultra Cash Vortex +5.0', 250),
+      parsePrizeDef(3, 'Lock & Slingo', 350),
+      parsePrizeDef(4, 'Ultra Jackpot (500x)', 15),
+      parsePrizeDef(5, 'Mega Cash Strike +3.0', 250),
+      parsePrizeDef(6, 'x10 Multiplier', 150),
+      parsePrizeDef(7, 'Mega Cash Vortex +4.0', 250),
+      parsePrizeDef(8, 'Lock & Slingo', 350),
+      parsePrizeDef(9, 'Ultra Cash Strike +5.0', 185)
     ],
 
     // Center Wild Wheel (9 slices)
@@ -245,7 +276,7 @@ export function createBalanced955Config() {
 
     bonusOutcomeDefs: [
       { outcomeId: 0, desc: '1 Cash Coin', weights: [1000, 1000, 1000, 1000, 1000], items: [{ type: SymbolType.CashCoin, count: 1 }] },
-      { outcomeId: 1, desc: '2 Cash Coins', weights: [400, 300, 200, 100, 0], items: [{ type: SymbolType.CashCoin, count: 2 }] },
+      { outcomeId: 1, desc: '2 Cash Coins', weights: [400, 300, 200, 100, 20], items: [{ type: SymbolType.CashCoin, count: 2 }] },
       { outcomeId: 2, desc: '3 Cash Coins', weights: [200, 100, 48, 5, 0], items: [{ type: SymbolType.CashCoin, count: 3 }] },
       { outcomeId: 3, desc: '1 Jackpot Coin', weights: [50, 40, 30, 20, 10], items: [{ type: SymbolType.JackpotCoin, count: 1 }] },
       { outcomeId: 4, desc: '1 Cash Coin + 1 Jackpot Coin', weights: [11, 5, 3, 1, 0], items: [{ type: SymbolType.CashCoin, count: 1 }, { type: SymbolType.JackpotCoin, count: 1 }] },

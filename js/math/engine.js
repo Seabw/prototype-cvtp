@@ -289,156 +289,136 @@ export class CashVortexSlotEngine {
     const newlyLandedCells = [];
     const emptyPositions = this.getEmptyPositions(this.grid);
 
-    if (triggeredWheel > 0) {
-      // Wheel Bonus Triggered: No special symbols, land cash coins / blanks
-      const coinChanceWeights = this.config.cashCoinChanceWeights[tableIndex];
-      let cashCoinsLandedCount = 0;
+    // Natural Spin: Land special symbol (if rolled) + cash coins + blanks
+    let specialSymbolLanded = false;
+    const specialChanceWeights = this.config.specialSymbolChanceWeights[tableIndex];
+    let specialRoll = specialChanceWeights.sample(this.rng); // 0: Special, 1: No Special
 
-      for (const pos of emptyPositions) {
-        const outcome = coinChanceWeights.sample(this.rng); // 0: Cash Coin, 1: Blank
-        const cell = this.grid[pos.r][pos.c];
-
-        if (outcome === 0) {
-          cell.type = SymbolType.CashCoin;
-          cell.cashValue = this.sampleCashCoinValue();
-          cell.lifeRemaining = 3;
-          cell.justLanded = true;
-          cell.wonThisSpin = false;
-          newlyLandedCells.push(cell);
-          cashCoinsLandedCount++;
-        } else {
-          cell.type = SymbolType.Blank;
-          cell.cashValue = 0.0;
-          cell.lifeRemaining = 0;
-          cell.wonThisSpin = false;
-        }
-      }
-
-      // Guaranteed 1 coin if 0 landed
-      if (cashCoinsLandedCount === 0 && emptyPositions.length > 0) {
-        const forcedIdx = this.rng.next(emptyPositions.length);
-        const pos = emptyPositions[forcedIdx];
-        const cell = this.grid[pos.r][pos.c];
-        cell.type = SymbolType.CashCoin;
-        cell.cashValue = this.sampleCashCoinValue();
-        cell.lifeRemaining = 3;
-        cell.justLanded = true;
-        newlyLandedCells.push(cell);
-      }
-
-      // Snapshot grid before Wheel bonus modifiers
-      telemetry.preActionGrid = this.grid.map(row => row.map(c => c.clone()));
-
-      // Play out triggered wheel bonus
-      this.executePotWheelBonus(triggeredWheel, telemetry);
-    } else {
-      // Normal Spin (No Wheel Bonus Triggered)
-      let specialSymbolLanded = false;
-      const specialChanceWeights = this.config.specialSymbolChanceWeights[tableIndex];
-      let specialRoll = specialChanceWeights.sample(this.rng); // 0: Special, 1: No Special
-
-      if (forcedOverrides.forceSpecialType !== undefined) {
-        specialRoll = 0;
-      }
-
-      if (specialRoll === 0 && emptyPositions.length > 0 && this.config.specialSymbolDefs.length > 0) {
-        specialSymbolLanded = true;
-        let specialTypeIdx = this.config.specialSymbolTypeWeights.sample(this.rng);
-        if (forcedOverrides.forceSpecialType !== undefined) {
-          specialTypeIdx = forcedOverrides.forceSpecialType;
-        }
-
-        const posIdx = this.rng.next(emptyPositions.length);
-        const targetPos = emptyPositions.splice(posIdx, 1)[0];
-        const cell = this.grid[targetPos.r][targetPos.c];
-
-        cell.justLanded = true;
-        cell.lifeRemaining = 3;
-        cell.wonThisSpin = false;
-
-        const specDef = this.config.specialSymbolDefs[specialTypeIdx];
-        const sName = specDef.symbolName;
-
-        if (sName.toLowerCase().includes('jackpot')) {
-          cell.type = SymbolType.JackpotCoin;
-          const jpIdx = this.config.jackpotTypeWeights.sample(this.rng);
-          const jpDef = this.config.jackpotCoins[jpIdx];
-          cell.jackpotType = jpDef.jackpotName;
-          cell.cashValue = jpDef.multiplier;
-        } else if (sName.toLowerCase().includes('mini vortex')) {
-          cell.type = SymbolType.MiniVortex;
-          cell.cashValue = this.config.miniVortexBasePay;
-        } else if (sName.toLowerCase().includes('mega vortex')) {
-          cell.type = SymbolType.MegaVortex;
-          cell.cashValue = this.config.megaVortexBasePay;
-        } else if (sName.toLowerCase().includes('ultra vortex')) {
-          cell.type = SymbolType.UltraVortex;
-          cell.cashValue = this.config.ultraVortexBasePay;
-        } else if (sName.toLowerCase().includes('mini strike')) {
-          cell.type = SymbolType.MiniStrike;
-          cell.cashValue = this.sampleCashStrikeValue();
-        } else if (sName.toLowerCase().includes('mega strike')) {
-          cell.type = SymbolType.MegaStrike;
-          cell.cashValue = this.sampleCashStrikeValue();
-        } else if (sName.toLowerCase().includes('ultra strike')) {
-          cell.type = SymbolType.UltraStrike;
-          cell.cashValue = this.sampleCashStrikeValue();
-        } else {
-          cell.type = SymbolType.CashCoin;
-          cell.cashValue = this.sampleCashCoinValue();
-        }
-
-        newlyLandedCells.push(cell);
-      }
-
-      // Fill remaining empty positions with Cash Coins or Blanks
-      const coinChanceWeights = this.config.cashCoinChanceWeights[tableIndex];
-      let cashCoinsLandedCount = 0;
-
-      for (const pos of emptyPositions) {
-        const outcome = coinChanceWeights.sample(this.rng);
-        const cell = this.grid[pos.r][pos.c];
-
-        if (outcome === 0) {
-          cell.type = SymbolType.CashCoin;
-          cell.cashValue = this.sampleCashCoinValue();
-          cell.lifeRemaining = 3;
-          cell.justLanded = true;
-          cell.wonThisSpin = false;
-          newlyLandedCells.push(cell);
-          cashCoinsLandedCount++;
-        } else {
-          cell.type = SymbolType.Blank;
-          cell.cashValue = 0.0;
-          cell.lifeRemaining = 0;
-          cell.wonThisSpin = false;
-        }
-      }
-
-      // Edge case: Guaranteed 1 coin if 0 special symbols and 0 coins landed
-      if (!specialSymbolLanded && cashCoinsLandedCount === 0 && emptyPositions.length > 0) {
-        const forcedIdx = this.rng.next(emptyPositions.length);
-        const pos = emptyPositions[forcedIdx];
-        const cell = this.grid[pos.r][pos.c];
-        cell.type = SymbolType.CashCoin;
-        cell.cashValue = this.sampleCashCoinValue();
-        cell.lifeRemaining = 3;
-        cell.justLanded = true;
-        newlyLandedCells.push(cell);
-      }
-
-      // Snapshot grid before Strikes & Vortexes modify values
-      telemetry.preActionGrid = this.grid.map(row => row.map(c => c.clone()));
-
-      // Execute Strikes & Vortexes
-      this.executeSpecialSymbolActions(this.grid, newlyLandedCells, telemetry);
+    if (forcedOverrides.forceSpecialType !== undefined) {
+      specialRoll = 0;
     }
 
-    // Step 5: Symbol Life Cycle Reset for Line-Sharing Existing Symbols
+    if (specialRoll === 0 && emptyPositions.length > 0 && this.config.specialSymbolDefs.length > 0) {
+      specialSymbolLanded = true;
+      let specialTypeIdx = this.config.specialSymbolTypeWeights.sample(this.rng);
+      if (forcedOverrides.forceSpecialType !== undefined) {
+        specialTypeIdx = forcedOverrides.forceSpecialType;
+      }
+
+      const posIdx = this.rng.next(emptyPositions.length);
+      const targetPos = emptyPositions.splice(posIdx, 1)[0];
+      const cell = this.grid[targetPos.r][targetPos.c];
+
+      cell.justLanded = true;
+      cell.lifeRemaining = 3;
+      cell.wonThisSpin = false;
+
+      const specDef = this.config.specialSymbolDefs[specialTypeIdx];
+      const sName = specDef.symbolName;
+
+      if (sName.toLowerCase().includes('jackpot')) {
+        cell.type = SymbolType.JackpotCoin;
+        const jpIdx = this.config.jackpotTypeWeights.sample(this.rng);
+        const jpDef = this.config.jackpotCoins[jpIdx];
+        cell.jackpotType = jpDef.jackpotName;
+        cell.cashValue = jpDef.multiplier;
+      } else if (sName.toLowerCase().includes('mini vortex')) {
+        cell.type = SymbolType.MiniVortex;
+        cell.cashValue = this.config.miniVortexBasePay;
+      } else if (sName.toLowerCase().includes('mega vortex')) {
+        cell.type = SymbolType.MegaVortex;
+        cell.cashValue = this.config.megaVortexBasePay;
+      } else if (sName.toLowerCase().includes('ultra vortex')) {
+        cell.type = SymbolType.UltraVortex;
+        cell.cashValue = this.config.ultraVortexBasePay;
+      } else if (sName.toLowerCase().includes('mini strike')) {
+        cell.type = SymbolType.MiniStrike;
+        cell.cashValue = this.sampleCashStrikeValue();
+      } else if (sName.toLowerCase().includes('mega strike')) {
+        cell.type = SymbolType.MegaStrike;
+        cell.cashValue = this.sampleCashStrikeValue();
+      } else if (sName.toLowerCase().includes('ultra strike')) {
+        cell.type = SymbolType.UltraStrike;
+        cell.cashValue = this.sampleCashStrikeValue();
+      } else {
+        cell.type = SymbolType.CashCoin;
+        cell.cashValue = this.sampleCashCoinValue();
+      }
+
+      newlyLandedCells.push(cell);
+    }
+
+    // Fill remaining empty positions with Cash Coins or Blanks
+    const coinChanceWeights = this.config.cashCoinChanceWeights[tableIndex];
+    let cashCoinsLandedCount = 0;
+
+    for (const pos of emptyPositions) {
+      const outcome = coinChanceWeights.sample(this.rng);
+      const cell = this.grid[pos.r][pos.c];
+
+      if (outcome === 0) {
+        cell.type = SymbolType.CashCoin;
+        cell.cashValue = this.sampleCashCoinValue();
+        cell.lifeRemaining = 3;
+        cell.justLanded = true;
+        cell.wonThisSpin = false;
+        newlyLandedCells.push(cell);
+        cashCoinsLandedCount++;
+      } else {
+        cell.type = SymbolType.Blank;
+        cell.cashValue = 0.0;
+        cell.lifeRemaining = 0;
+        cell.wonThisSpin = false;
+      }
+    }
+
+    // Edge case: Guaranteed 1 coin if 0 special symbols and 0 coins landed
+    if (!specialSymbolLanded && cashCoinsLandedCount === 0 && emptyPositions.length > 0) {
+      const forcedIdx = this.rng.next(emptyPositions.length);
+      const pos = emptyPositions[forcedIdx];
+      const cell = this.grid[pos.r][pos.c];
+      cell.type = SymbolType.CashCoin;
+      cell.cashValue = this.sampleCashCoinValue();
+      cell.lifeRemaining = 3;
+      cell.justLanded = true;
+      newlyLandedCells.push(cell);
+    }
+
+    // Snapshot grid before natural Strikes & Vortexes modify values
+    telemetry.preActionGrid = this.grid.map(row => row.map(c => c.clone()));
+
+    // Step 5: Execute Natural Reel Special Symbol Actions (Strikes then Vortexes)
+    this.executeSpecialSymbolActions(this.grid, newlyLandedCells, telemetry);
+
+    // Snapshot grid after natural reel powers have finished applying
+    telemetry.postReelActionGrid = this.grid.map(row => row.map(c => c.clone()));
+
+    // Step 6: Triggered Wheel Bonus Plays AFTER Spin Finishes & Reel Powers Have Finished
+    if (triggeredWheel > 0) {
+      this.executePotWheelBonus(triggeredWheel, newlyLandedCells, telemetry);
+    }
+
+    // Step 7: Symbol Life Cycle Reset for Line-Sharing Existing Symbols
     this.applyLifeCycleResets(this.grid, newlyLandedCells, telemetry);
 
-    // Step 6: 12 Slingo Lines Evaluation & Center Wild Wheel Bonus
+    // Step 8: 12 Slingo Lines Evaluation & Center Wild Wheel Bonus
     this.evaluateSlingoLines(telemetry, forcedOverrides);
+
+    // Step 9: If Lock & Slingo was awarded from Wheel Bonus, start AFTER all Win Evaluations finish
+    if (telemetry.wheelAwardedLockAndSlingo) {
+      telemetry.lockAndSlingoResult = this.playLockAndSlingoBonus();
+      telemetry.totalWinCents += telemetry.lockAndSlingoResult.totalBonusWinCents;
+    }
+
+    // Snapshot newly landed for UI telemetry
+    telemetry.newlyLanded = newlyLandedCells.map(c => ({
+      row: c.row,
+      col: c.col,
+      type: c.type,
+      cashValue: c.cashValue,
+      jackpotType: c.jackpotType,
+      lifeRemaining: c.lifeRemaining
+    }));
 
     // Snapshot newly landed for UI telemetry
     telemetry.newlyLanded = newlyLandedCells.map(c => ({
@@ -618,7 +598,7 @@ export class CashVortexSlotEngine {
     }
   }
 
-  executePotWheelBonus(triggeredWheel, telemetry) {
+  executePotWheelBonus(triggeredWheel, newlyLandedCells, telemetry) {
     const weightTable =
       triggeredWheel === 1
         ? this.config.miniWheelWeightTable
@@ -640,13 +620,150 @@ export class CashVortexSlotEngine {
 
     let featureWinCents = 0;
     const affectedCells = [];
+    let placedSymbol = null;
+
+    // Remaining empty spaces (Blanks) on the 5x5 grid
+    const currentEmpty = [];
+    for (let r = 0; r < 5; r++) {
+      for (let c = 0; c < 5; c++) {
+        if (r === 2 && c === 2) continue; // Central Star
+        if (this.grid[r][c].type === SymbolType.Blank) currentEmpty.push({ r, c });
+      }
+    }
 
     switch (prize.type) {
+      case WheelPrizeType.MiniStrike:
+      case WheelPrizeType.MegaStrike:
+      case WheelPrizeType.UltraStrike: {
+        const strikeVal = prize.parameterValue > 0 ? prize.parameterValue : 1.0;
+        let strikeCell;
+
+        if (currentEmpty.length > 0) {
+          const pick = this.rng.next(currentEmpty.length);
+          const pos = currentEmpty.splice(pick, 1)[0];
+          strikeCell = this.grid[pos.r][pos.c];
+          strikeCell.type =
+            prize.type === WheelPrizeType.MiniStrike
+              ? SymbolType.MiniStrike
+              : prize.type === WheelPrizeType.MegaStrike
+              ? SymbolType.MegaStrike
+              : SymbolType.UltraStrike;
+          strikeCell.cashValue = strikeVal;
+          strikeCell.lifeRemaining = 3;
+          strikeCell.justLanded = true;
+          strikeCell.wonThisSpin = false;
+          if (newlyLandedCells) newlyLandedCells.push(strikeCell);
+          placedSymbol = { row: pos.r, col: pos.c, type: strikeCell.type, cashValue: strikeCell.cashValue };
+        } else {
+          strikeCell = { row: 2, col: 2, type: SymbolType.UltraStrike, cashValue: strikeVal };
+        }
+
+        if (prize.type === WheelPrizeType.MiniStrike) {
+          const targets = this.getOrthogonalNeighbors(this.grid, strikeCell.row, strikeCell.col);
+          for (const t of targets) {
+            if (t.type !== SymbolType.Blank && t.type !== SymbolType.CentralWildStar && t.type !== SymbolType.JackpotCoin) {
+              const prev = t.cashValue;
+              t.cashValue = Math.round((t.cashValue + strikeVal) * 100) / 100;
+              affectedCells.push({ row: t.row, col: t.col, prev, newVal: t.cashValue });
+            }
+          }
+        } else if (prize.type === WheelPrizeType.MegaStrike) {
+          const targets = this.getSameLineCells(this.grid, strikeCell.row, strikeCell.col);
+          for (const t of targets) {
+            if (t !== strikeCell && t.type !== SymbolType.Blank && t.type !== SymbolType.CentralWildStar && t.type !== SymbolType.JackpotCoin) {
+              const prev = t.cashValue;
+              t.cashValue = Math.round((t.cashValue + strikeVal) * 100) / 100;
+              affectedCells.push({ row: t.row, col: t.col, prev, newVal: t.cashValue });
+            }
+          }
+        } else {
+          // UltraStrike
+          for (let r = 0; r < 5; r++) {
+            for (let c = 0; c < 5; c++) {
+              const t = this.grid[r][c];
+              if (t !== strikeCell && t.type !== SymbolType.Blank && t.type !== SymbolType.CentralWildStar && t.type !== SymbolType.JackpotCoin) {
+                const prev = t.cashValue;
+                t.cashValue = Math.round((t.cashValue + strikeVal) * 100) / 100;
+                affectedCells.push({ row: r, col: c, prev, newVal: t.cashValue });
+              }
+            }
+          }
+        }
+        break;
+      }
+
+      case WheelPrizeType.MiniVortex:
+      case WheelPrizeType.MegaVortex:
+      case WheelPrizeType.UltraVortex: {
+        const vortexBase =
+          prize.parameterValue > 0
+            ? prize.parameterValue
+            : prize.type === WheelPrizeType.MiniVortex
+            ? this.config.miniVortexBasePay
+            : prize.type === WheelPrizeType.MegaVortex
+            ? this.config.megaVortexBasePay
+            : this.config.ultraVortexBasePay;
+
+        let vortexCell;
+        if (currentEmpty.length > 0) {
+          const pick = this.rng.next(currentEmpty.length);
+          const pos = currentEmpty.splice(pick, 1)[0];
+          vortexCell = this.grid[pos.r][pos.c];
+          vortexCell.type =
+            prize.type === WheelPrizeType.MiniVortex
+              ? SymbolType.MiniVortex
+              : prize.type === WheelPrizeType.MegaVortex
+              ? SymbolType.MegaVortex
+              : SymbolType.UltraVortex;
+          vortexCell.cashValue = vortexBase;
+          vortexCell.lifeRemaining = 3;
+          vortexCell.justLanded = true;
+          vortexCell.wonThisSpin = false;
+          if (newlyLandedCells) newlyLandedCells.push(vortexCell);
+          placedSymbol = { row: pos.r, col: pos.c, type: vortexCell.type, cashValue: vortexCell.cashValue };
+        } else {
+          vortexCell = { row: 2, col: 2, type: SymbolType.UltraVortex, cashValue: vortexBase };
+        }
+
+        let gatheredSum = 0.0;
+        if (prize.type === WheelPrizeType.MiniVortex) {
+          const targets = this.getOrthogonalNeighbors(this.grid, vortexCell.row, vortexCell.col);
+          for (const t of targets) {
+            if (t.type !== SymbolType.Blank && t.type !== SymbolType.CentralWildStar && t.type !== SymbolType.JackpotCoin) {
+              gatheredSum += t.cashValue;
+              if (t.cashValue > 0) affectedCells.push({ row: t.row, col: t.col, prev: t.cashValue, newVal: t.cashValue });
+            }
+          }
+        } else if (prize.type === WheelPrizeType.MegaVortex) {
+          const targets = this.getSameLineCells(this.grid, vortexCell.row, vortexCell.col);
+          for (const t of targets) {
+            if (t !== vortexCell && t.type !== SymbolType.Blank && t.type !== SymbolType.CentralWildStar && t.type !== SymbolType.JackpotCoin) {
+              gatheredSum += t.cashValue;
+              if (t.cashValue > 0) affectedCells.push({ row: t.row, col: t.col, prev: t.cashValue, newVal: t.cashValue });
+            }
+          }
+        } else {
+          // UltraVortex
+          for (let r = 0; r < 5; r++) {
+            for (let c = 0; c < 5; c++) {
+              const t = this.grid[r][c];
+              if (t !== vortexCell && t.type !== SymbolType.Blank && t.type !== SymbolType.CentralWildStar && t.type !== SymbolType.JackpotCoin) {
+                gatheredSum += t.cashValue;
+                if (t.cashValue > 0) affectedCells.push({ row: r, col: c, prev: t.cashValue, newVal: t.cashValue });
+              }
+            }
+          }
+        }
+        vortexCell.cashValue = Math.round((vortexCell.cashValue + gatheredSum) * 100) / 100;
+        break;
+      }
+
       case WheelPrizeType.Multiplier: {
         const mult = prize.parameterValue > 0 ? prize.parameterValue : 2.0;
         for (let r = 0; r < 5; r++) {
           for (let c = 0; c < 5; c++) {
             const cell = this.grid[r][c];
+            // Jackpots, Central Wild Star, and Blanks are strictly excluded!
             if (cell.type !== SymbolType.Blank && cell.type !== SymbolType.CentralWildStar && cell.type !== SymbolType.JackpotCoin) {
               const prev = cell.cashValue;
               cell.cashValue = Math.round(cell.cashValue * mult * 100) / 100;
@@ -656,20 +773,7 @@ export class CashVortexSlotEngine {
         }
         break;
       }
-      case WheelPrizeType.UltraStrike: {
-        const strike = prize.parameterValue;
-        for (let r = 0; r < 5; r++) {
-          for (let c = 0; c < 5; c++) {
-            const cell = this.grid[r][c];
-            if (cell.type !== SymbolType.Blank && cell.type !== SymbolType.CentralWildStar && cell.type !== SymbolType.JackpotCoin) {
-              const prev = cell.cashValue;
-              cell.cashValue = Math.round((cell.cashValue + strike) * 100) / 100;
-              affectedCells.push({ row: r, col: c, prev, newVal: cell.cashValue });
-            }
-          }
-        }
-        break;
-      }
+
       case WheelPrizeType.Jackpot: {
         let jpMult = 5.0;
         if (prize.jackpotType === 'Mega') jpMult = 50.0;
@@ -678,18 +782,30 @@ export class CashVortexSlotEngine {
         telemetry.totalWinCents += featureWinCents;
         break;
       }
+
       case WheelPrizeType.InstantCash: {
         const cashMult = prize.parameterValue > 0 ? prize.parameterValue : 1.0;
         featureWinCents = Math.round(cashMult * 100);
         telemetry.totalWinCents += featureWinCents;
         break;
       }
+
       case WheelPrizeType.LockAndSlingo: {
-        telemetry.lockAndSlingoResult = this.playLockAndSlingoBonus();
-        telemetry.totalWinCents += telemetry.lockAndSlingoResult.totalBonusWinCents;
+        // Lock & Slingo is awarded from wheel, but starts AFTER all win evaluations finish
+        telemetry.wheelAwardedLockAndSlingo = true;
         break;
       }
     }
+
+    telemetry.potWheelPrize = {
+      potIndex: triggeredWheel,
+      prizeIndex: prizeIdx,
+      prize,
+      featureWinCents,
+      affectedCells,
+      placedSymbol
+    };
+  }
 
     telemetry.potWheelPrize = {
       potIndex: triggeredWheel,

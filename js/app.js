@@ -285,7 +285,7 @@ class CashVortexApp {
 
       const speedMult = this.isTurbo ? 0.35 : 1.0;
 
-      // Step 1: Expired Coins Flight to Pots
+      // Step 1: Expired Coins Flight to Pots (Determines potential wheel trigger)
       if (telemetry.expiredCoins && telemetry.expiredCoins.length > 0) {
         this.setStatus(`EXPIRED COINS FLYING TO POTS (${telemetry.expiredCoins.length} COINS)...`);
         await this.flyingCoins.animateExpiredCoins(telemetry.expiredCoins, this.soundSynth, this.isTurbo);
@@ -303,7 +303,60 @@ class CashVortexApp {
         await new Promise(r => setTimeout(r, 200 * speedMult));
       }
 
-      // Step 2: Reel-Top Wheel Bonus (if triggered)
+      // Step 2: Render Landed Symbols on Grid (Spin finishes, all new symbols land)
+      if (telemetry.preActionGrid) {
+        this.visualGrid.render(telemetry.preActionGrid);
+      } else {
+        this.visualGrid.render(this.engine.grid);
+      }
+      this.soundSynth.playCoinLand();
+      this.setStatus('SYMBOLS LANDED!');
+      // Wait for drop & bounce animations to fully settle
+      await new Promise(r => setTimeout(r, 650 * speedMult));
+
+      // Step 3: Natural Strikes Execution (On-reel special symbols fire powers)
+      if (telemetry.strikeActions && telemetry.strikeActions.length > 0) {
+        for (const strike of telemetry.strikeActions) {
+          const tier = strike.strikeCell.type === SymbolType.MiniStrike ? 'MINI' : strike.strikeCell.type === SymbolType.MegaStrike ? 'MEGA' : 'ULTRA';
+          const count = strike.affectedCells ? strike.affectedCells.length : 0;
+          const strikeVal = (Number(strike.strikeCell?.value) || 0).toFixed(1);
+          this.setStatus(`⚡ ${tier} STRIKE FIRING! APPLYING +${strikeVal}x TO ${count} COINS...`);
+          await new Promise(r => setTimeout(r, 200 * speedMult));
+          await this.visualGrid.animateStrikeFlyAndCountUp(
+            strike,
+            this.dom.coinFlightContainer,
+            this.soundSynth,
+            speedMult
+          );
+          await new Promise(r => setTimeout(r, 350 * speedMult));
+        }
+      }
+
+      // Step 4: Natural Vortexes Execution (Coins fly in & vortex gathers)
+      if (telemetry.vortexActions && telemetry.vortexActions.length > 0) {
+        for (const vortex of telemetry.vortexActions) {
+          const tier = vortex.vortexCell.type === SymbolType.MiniVortex ? 'MINI' : vortex.vortexCell.type === SymbolType.MegaVortex ? 'MEGA' : 'ULTRA';
+          const count = vortex.collectedCells ? vortex.collectedCells.length : 0;
+          const basePay = (Number(vortex.vortexCell?.basePay) || 0).toFixed(1);
+          const finalVal = (Number(vortex.finalValue) || 0).toFixed(1);
+          this.setStatus(`🌀 ${tier} VORTEX SUCTIONING ${count} COINS (BASE ${basePay}x ➔ ${finalVal}x)...`);
+          await new Promise(r => setTimeout(r, 200 * speedMult));
+          await this.visualGrid.animateVortexSuctionAndCountUp(
+            vortex,
+            this.dom.coinFlightContainer,
+            this.soundSynth,
+            speedMult
+          );
+          await new Promise(r => setTimeout(r, 400 * speedMult));
+        }
+      }
+
+      // Synchronize grid after natural reel powers have finished
+      if (telemetry.postReelActionGrid) {
+        this.visualGrid.render(telemetry.postReelActionGrid);
+      }
+
+      // Step 5: Triggered Wheel Bonus Plays AFTER Spin Finishes & Reel Powers Have Finished
       if (telemetry.triggeredWheel > 0 && telemetry.potWheelPrize) {
         const potIdx = telemetry.triggeredWheel;
         const wheelName = potIdx === 1 ? 'Mini Wheel' : potIdx === 2 ? 'Mega Wheel' : 'Ultra Wheel';
@@ -327,53 +380,17 @@ class CashVortexApp {
             onComplete: resolve
           });
         });
-      }
 
-      // Step 3: Render Landed Symbols on Grid (Initial pre-modifier state)
-      if (telemetry.preActionGrid) {
-        this.visualGrid.render(telemetry.preActionGrid);
-      } else {
-        this.visualGrid.render(this.engine.grid);
-      }
-      this.soundSynth.playCoinLand();
-      this.setStatus('SYMBOLS LANDED!');
-      // Wait for drop & bounce animations to fully settle
-      await new Promise(r => setTimeout(r, 650 * speedMult));
-
-      // Step 4: Strikes Execution (Flying energy boost & count-up)
-      if (telemetry.strikeActions && telemetry.strikeActions.length > 0) {
-        for (const strike of telemetry.strikeActions) {
-          const tier = strike.strikeCell.type === SymbolType.MiniStrike ? 'MINI' : strike.strikeCell.type === SymbolType.MegaStrike ? 'MEGA' : 'ULTRA';
-          const count = strike.affectedCells ? strike.affectedCells.length : 0;
-          const strikeVal = (Number(strike.strikeCell?.value) || 0).toFixed(1);
-          this.setStatus(`⚡ ${tier} STRIKE FIRING! APPLYING +${strikeVal}x TO ${count} COINS...`);
-          await new Promise(r => setTimeout(r, 200 * speedMult));
-          await this.visualGrid.animateStrikeFlyAndCountUp(
-            strike,
-            this.dom.coinFlightContainer,
-            this.soundSynth,
-            speedMult
-          );
-          await new Promise(r => setTimeout(r, 350 * speedMult));
-        }
-      }
-
-      // Step 5: Vortexes Execution (Coins fly in & vortex counts up)
-      if (telemetry.vortexActions && telemetry.vortexActions.length > 0) {
-        for (const vortex of telemetry.vortexActions) {
-          const tier = vortex.vortexCell.type === SymbolType.MiniVortex ? 'MINI' : vortex.vortexCell.type === SymbolType.MegaVortex ? 'MEGA' : 'ULTRA';
-          const count = vortex.collectedCells ? vortex.collectedCells.length : 0;
-          const basePay = (Number(vortex.vortexCell?.basePay) || 0).toFixed(1);
-          const finalVal = (Number(vortex.finalValue) || 0).toFixed(1);
-          this.setStatus(`🌀 ${tier} VORTEX SUCTIONING ${count} COINS (BASE ${basePay}x ➔ ${finalVal}x)...`);
-          await new Promise(r => setTimeout(r, 200 * speedMult));
-          await this.visualGrid.animateVortexSuctionAndCountUp(
-            vortex,
-            this.dom.coinFlightContainer,
-            this.soundSynth,
-            speedMult
-          );
-          await new Promise(r => setTimeout(r, 400 * speedMult));
+        // If Wheel awarded Cash Strike or Cash Vortex, it placed onto a random empty space
+        if (telemetry.potWheelPrize.placedSymbol) {
+          const sym = telemetry.potWheelPrize.placedSymbol;
+          const pName = telemetry.potWheelPrize.prize.prizeString;
+          this.setStatus(`🎯 WHEEL AWARDED ${pName}! PLACED ON REELS AT (${sym.row + 1}, ${sym.col + 1})`);
+          this.visualGrid.render(this.engine.grid);
+          this.soundSynth.playSpecialSymbolLand();
+          await new Promise(r => setTimeout(r, 600 * speedMult));
+        } else {
+          this.visualGrid.render(this.engine.grid);
         }
       }
 

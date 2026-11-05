@@ -1,11 +1,11 @@
-import { createBalanced955Config, SymbolType } from './math/config.js?v=3.4.0';
-import { CashVortexSlotEngine } from './math/engine.js?v=3.4.0';
-import { SoundSynth } from './audio/soundSynth.js?v=3.4.0';
-import { VisualGrid } from './ui/visualGrid.js?v=3.4.0';
-import { FlyingCoins } from './ui/flyingCoins.js?v=3.4.0';
-import { WheelOverlay } from './ui/wheelOverlay.js?v=3.4.0';
-import { BonusView } from './ui/bonusView.js?v=3.4.0';
-import { DebugPanel } from './ui/debugPanel.js?v=3.4.0';
+import { createBalanced955Config, SymbolType, WheelPrizeType } from './math/config.js?v=3.4.1';
+import { CashVortexSlotEngine } from './math/engine.js?v=3.4.1';
+import { SoundSynth } from './audio/soundSynth.js?v=3.4.1';
+import { VisualGrid } from './ui/visualGrid.js?v=3.4.1';
+import { FlyingCoins } from './ui/flyingCoins.js?v=3.4.1';
+import { WheelOverlay } from './ui/wheelOverlay.js?v=3.4.1';
+import { BonusView } from './ui/bonusView.js?v=3.4.1';
+import { DebugPanel } from './ui/debugPanel.js?v=3.4.1';
 
 class CashVortexApp {
   constructor() {
@@ -303,6 +303,17 @@ class CashVortexApp {
         await new Promise(r => setTimeout(r, 200 * speedMult));
       }
 
+      // If a Top Wheel was triggered at Spin Start, highlight the Pot and hold pending until Spin & Reel Powers finish!
+      if (telemetry.triggeredWheel > 0) {
+        const tPotIdx = telemetry.triggeredWheel;
+        const tWheelName = tPotIdx === 1 ? 'Mini Wheel' : tPotIdx === 2 ? 'Mega Wheel' : 'Ultra Wheel';
+        const potElem = this.dom.potElements[tPotIdx - 1];
+        if (potElem) potElem.classList.add('pot-pulse-hit');
+        this.soundSynth.playWheelWin();
+        this.setStatus(`🔥 ${tWheelName.toUpperCase()} TRIGGERED! HELD PENDING UNTIL SPIN & REEL POWERS FINISH... 🔥`);
+        await new Promise(r => setTimeout(r, 550 * speedMult));
+      }
+
       // Step 2: Render Landed Symbols on Grid (Spin finishes, all new symbols land)
       if (telemetry.preActionGrid) {
         this.visualGrid.render(telemetry.preActionGrid);
@@ -367,7 +378,7 @@ class CashVortexApp {
             ? this.config.megaWheelPrizes
             : this.config.ultraWheelPrizes;
 
-        this.setStatus(`★ ${wheelName.toUpperCase()} BONUS TRIGGERED! ★`);
+        this.setStatus(`★ SPIN & REEL POWERS FINISHED — LAUNCHING ${wheelName.toUpperCase()} BONUS! ★`);
         if (potIdx === 1) this.stats.wheel1Hits++;
         else if (potIdx === 2) this.stats.wheel2Hits++;
         else if (potIdx === 3) this.stats.wheel3Hits++;
@@ -381,11 +392,16 @@ class CashVortexApp {
           });
         });
 
+        const potElem = this.dom.potElements[potIdx - 1];
+        if (potElem) potElem.classList.remove('pot-pulse-hit');
+
+        const prizeObj = telemetry.potWheelPrize.prize;
+        const pName = prizeObj.prizeString;
+
         // If Wheel awarded Cash Strike or Cash Vortex, it placed onto a random empty space
         if (telemetry.potWheelPrize.placedSymbol) {
           const sym = telemetry.potWheelPrize.placedSymbol;
-          const pName = telemetry.potWheelPrize.prize.prizeString;
-          this.setStatus(`🎯 WHEEL AWARDED ${pName}! PLACED ON REELS AT (${sym.row + 1}, ${sym.col + 1})`);
+          this.setStatus(`🎯 WHEEL AWARDED ${pName}! PLACED ON EMPTY SPACE (${sym.row + 1}, ${sym.col + 1})`);
 
           if (telemetry.postReelActionGrid && telemetry.postReelActionGrid[sym.row]?.[sym.col]) {
             const pCell = telemetry.postReelActionGrid[sym.row][sym.col];
@@ -418,6 +434,28 @@ class CashVortexApp {
             await new Promise(r => setTimeout(r, 350 * speedMult));
           }
           this.visualGrid.render(this.engine.grid);
+        } else if (prizeObj.type === WheelPrizeType.Multiplier) {
+          const affCount = telemetry.potWheelPrize.affectedCells ? telemetry.potWheelPrize.affectedCells.length : 0;
+          this.setStatus(`⚡ WHEEL AWARDED ${pName}! MULTIPLIED ${affCount} ACTIVE COINS ON REELS (JACKPOTS EXCLUDED)!`);
+          this.visualGrid.render(this.engine.grid);
+          if (telemetry.potWheelPrize.affectedCells) {
+            telemetry.potWheelPrize.affectedCells.forEach(t => {
+              this.visualGrid.highlightCell(t.row, t.col, 'strike-hit', 750);
+              this.visualGrid.highlightCell(t.row, t.col, 'val-countup-pop', 750);
+            });
+          }
+          this.soundSynth.playStrikeZap();
+          await new Promise(r => setTimeout(r, 650 * speedMult));
+        } else if (prizeObj.type === WheelPrizeType.Jackpot || prizeObj.type === WheelPrizeType.InstantCash) {
+          this.setStatus(`🏆 WHEEL AWARDED ${pName}! ADDED TO TOTAL SPIN WIN!`);
+          this.soundSynth.playJackpotFanfare();
+          this.visualGrid.render(this.engine.grid);
+          await new Promise(r => setTimeout(r, 600 * speedMult));
+        } else if (prizeObj.type === WheelPrizeType.LockAndSlingo) {
+          this.setStatus(`🎉 WHEEL AWARDED LOCK & SLINGO™ BONUS! WILL START AFTER WIN EVALUATIONS... 🎉`);
+          this.soundSynth.playWheelWin();
+          this.visualGrid.render(this.engine.grid);
+          await new Promise(r => setTimeout(r, 650 * speedMult));
         } else {
           this.visualGrid.render(this.engine.grid);
         }

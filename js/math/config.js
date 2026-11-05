@@ -1,4 +1,4 @@
-import { WeightTable } from './weightTable.js?v=3.5.0';
+import { WeightTable } from './weightTable.js?v=3.5.1';
 
 export const SymbolType = {
   CentralWildStar: 0,

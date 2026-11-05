@@ -1,4 +1,4 @@
-import { SymbolType, SLINGO_LINES } from '../math/config.js?v=3.5.0';
+import { SymbolType, SLINGO_LINES } from '../math/config.js?v=3.5.1';
 
 export class VisualGrid {
   constructor(gridElement, svgLinesElement) {
@@ -633,50 +633,66 @@ export class VisualGrid {
       <div class="flying-mod-title">${tierLabel}<br/>${modKind}</div>
       <div class="flying-mod-val">+${baseVal.toFixed(1)}x</div>
     `;
+    flyingEl.style.left = '0px';
+    flyingEl.style.top = '0px';
     flyingEl.style.transform = `translate3d(${startX}px, ${startY}px, 0) translate(-50%, -50%) scale(1.15)`;
     containerElement.appendChild(flyingEl);
 
-    if (soundSynth) soundSynth.playSpecialSymbolLand();
+    try {
+      if (soundSynth && typeof soundSynth.playFlightToPot === 'function') {
+        soundSynth.playFlightToPot();
+      }
 
-    // Pause briefly at the triggered wheel pot so the player sees it spawn from that pot
-    await new Promise(r => setTimeout(r, Math.max(180, 320 * speedMult)));
+      // Brief spawn beat at the triggered wheel pot so the player sees which pot launched it
+      await new Promise(r => setTimeout(r, Math.max(140, 240 * speedMult)));
 
-    const flightDuration = Math.max(380, 880 * speedMult);
-    const startTime = performance.now();
-    const ctrlX = (startX + endX) / 2 + (endX >= startX ? 45 : -45);
-    const ctrlY = Math.min(startY, endY) - 55;
+      const flightDuration = Math.max(420, 880 * speedMult);
+      const startTime = performance.now();
+      // Dramatic sideways + upward arc between the Top Wheel Pot and the target grid cell
+      const horizontalSpan = endX - startX;
+      const ctrlX = (startX + endX) / 2 + (horizontalSpan >= 0 ? 75 : -75);
+      const ctrlY = Math.min(startY, endY) - 65;
 
-    await new Promise(resolve => {
-      const safetyTimer = setTimeout(resolve, flightDuration + 500);
-      const step = now => {
-        try {
-          const elapsed = (now || performance.now()) - startTime;
-          const t = Math.min(1, Math.max(0, elapsed / flightDuration));
-          // Smooth ease-in-out
-          const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+      await new Promise(resolve => {
+        const safetyTimer = setTimeout(resolve, flightDuration + 500);
+        const step = now => {
+          try {
+            const elapsed = (now || performance.now()) - startTime;
+            const t = Math.min(1, Math.max(0, elapsed / flightDuration));
+            // Smooth ease-in-out
+            const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 
-          const x = Math.pow(1 - ease, 2) * startX + 2 * (1 - ease) * ease * ctrlX + Math.pow(ease, 2) * endX;
-          const y = Math.pow(1 - ease, 2) * startY + 2 * (1 - ease) * ease * ctrlY + Math.pow(ease, 2) * endY;
-          const scale = 1.15 + Math.sin(ease * Math.PI) * 0.25 - ease * 0.15;
+            const x = Math.pow(1 - ease, 2) * startX + 2 * (1 - ease) * ease * ctrlX + Math.pow(ease, 2) * endX;
+            const y = Math.pow(1 - ease, 2) * startY + 2 * (1 - ease) * ease * ctrlY + Math.pow(ease, 2) * endY;
+            const scale = 1.15 + Math.sin(ease * Math.PI) * 0.28 - ease * 0.15;
 
-          flyingEl.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%) scale(${scale})`;
+            flyingEl.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%) scale(${scale})`;
 
-          if (t < 1) {
-            requestAnimationFrame(step);
-          } else {
+            if (t < 1) {
+              requestAnimationFrame(step);
+            } else {
+              clearTimeout(safetyTimer);
+              resolve();
+            }
+          } catch (e) {
             clearTimeout(safetyTimer);
             resolve();
           }
-        } catch (e) {
-          clearTimeout(safetyTimer);
-          resolve();
-        }
-      };
-      requestAnimationFrame(step);
-    });
+        };
+        requestAnimationFrame(step);
+      });
 
-    flyingEl.remove();
-    targetElem.classList.remove('wheel-target-cell');
+      if (soundSynth && typeof soundSynth.playCoinLand === 'function') {
+        soundSynth.playCoinLand();
+      }
+    } finally {
+      if (flyingEl && flyingEl.parentNode) {
+        flyingEl.parentNode.removeChild(flyingEl);
+      } else if (flyingEl) {
+        flyingEl.remove();
+      }
+      targetElem.classList.remove('wheel-target-cell');
+    }
   }
 
   /**

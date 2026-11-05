@@ -1,4 +1,4 @@
-import { SymbolType, SLINGO_LINES } from '../math/config.js?v=3.5.0';
+import { SymbolType, SLINGO_LINES } from '../math/config.js?v=3.5.1';
 
 export class BonusView {
   constructor(overlayElement, soundSynth) {

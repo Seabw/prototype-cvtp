@@ -1,5 +1,5 @@
-import { SymbolType, WheelPrizeType, SLINGO_LINES } from './config.js?v=3.5.0';
-import { Rng } from './rng.js?v=3.5.0';
+import { SymbolType, WheelPrizeType, SLINGO_LINES } from './config.js?v=3.5.1';
+import { Rng } from './rng.js?v=3.5.1';
 
 export class GridCell {
   constructor(row, col) {

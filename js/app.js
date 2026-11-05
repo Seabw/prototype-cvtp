@@ -1,11 +1,11 @@
-import { createBalanced955Config, SymbolType, WheelPrizeType } from './math/config.js?v=3.5.0';
-import { CashVortexSlotEngine } from './math/engine.js?v=3.5.0';
-import { SoundSynth } from './audio/soundSynth.js?v=3.5.0';
-import { VisualGrid } from './ui/visualGrid.js?v=3.5.0';
-import { FlyingCoins } from './ui/flyingCoins.js?v=3.5.0';
-import { WheelOverlay } from './ui/wheelOverlay.js?v=3.5.0';
-import { BonusView } from './ui/bonusView.js?v=3.5.0';
-import { DebugPanel } from './ui/debugPanel.js?v=3.5.0';
+import { createBalanced955Config, SymbolType, WheelPrizeType } from './math/config.js?v=3.5.1';
+import { CashVortexSlotEngine } from './math/engine.js?v=3.5.1';
+import { SoundSynth } from './audio/soundSynth.js?v=3.5.1';
+import { VisualGrid } from './ui/visualGrid.js?v=3.5.1';
+import { FlyingCoins } from './ui/flyingCoins.js?v=3.5.1';
+import { WheelOverlay } from './ui/wheelOverlay.js?v=3.5.1';
+import { BonusView } from './ui/bonusView.js?v=3.5.1';
+import { DebugPanel } from './ui/debugPanel.js?v=3.5.1';
 
 class CashVortexApp {
   constructor() {

@@ -1,5 +1,5 @@
-import { SymbolType, WheelPrizeType, SLINGO_LINES } from './config.js?v=3.4.0';
-import { Rng } from './rng.js?v=3.4.0';
+import { SymbolType, WheelPrizeType, SLINGO_LINES } from './config.js?v=3.5.0';
+import { Rng } from './rng.js?v=3.5.0';
 
 export class GridCell {
   constructor(row, col) {
@@ -509,6 +509,20 @@ export class CashVortexSlotEngine {
         telemetry.vortexActions.push(vortexRecord);
       }
     }
+
+    // 3. Once natural Strikes & Vortexes have applied their power, they become Cash Coins with their final cashValue
+    for (const cell of newlyLanded) {
+      if (
+        cell.type === SymbolType.MiniStrike ||
+        cell.type === SymbolType.MegaStrike ||
+        cell.type === SymbolType.UltraStrike ||
+        cell.type === SymbolType.MiniVortex ||
+        cell.type === SymbolType.MegaVortex ||
+        cell.type === SymbolType.UltraVortex
+      ) {
+        cell.type = SymbolType.CashCoin;
+      }
+    }
   }
 
   applyLifeCycleResets(targetGrid, newlyLanded, telemetry) {
@@ -689,6 +703,10 @@ export class CashVortexSlotEngine {
           strikeCell: { row: strikeCell.row, col: strikeCell.col, type: strikeCell.type, value: strikeVal },
           affectedCells
         };
+        if (placedSymbol) {
+          placedSymbol.finalCashValue = strikeCell.cashValue;
+          strikeCell.type = SymbolType.CashCoin;
+        }
         break;
       }
 
@@ -760,6 +778,10 @@ export class CashVortexSlotEngine {
           collectedCells: affectedCells,
           finalValue: vortexCell.cashValue
         };
+        if (placedSymbol) {
+          placedSymbol.finalCashValue = vortexCell.cashValue;
+          vortexCell.type = SymbolType.CashCoin;
+        }
         break;
       }
 

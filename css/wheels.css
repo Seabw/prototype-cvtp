@@ -146,8 +146,10 @@
 
 .wheel-canvas-wrapper {
   position: relative;
-  width: 420px;
-  height: 420px;
+  width: 480px;
+  height: 480px;
+  max-width: 88vw;
+  max-height: 88vw;
 }
 
 #wheel-canvas {

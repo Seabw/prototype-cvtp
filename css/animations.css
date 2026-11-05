@@ -309,3 +309,115 @@
   color: #00e5ff;
   text-shadow: 0 0 25px rgba(0, 229, 255, 0.8);
 }
+
+/* ==========================================================================
+   Flying Wheel Modifier Symbol (From Triggered Top Wheel Pot to Grid Cell)
+   & Morph-to-Cash-Coin Transformation
+   ========================================================================== */
+.flying-wheel-modifier-symbol {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 96px;
+  height: 96px;
+  pointer-events: none;
+  z-index: 980;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px;
+  border-radius: 16px;
+  border: 3px solid #ffffff;
+  text-align: center;
+  box-shadow: 0 0 35px #ffd700, 0 8px 25px rgba(0, 0, 0, 0.75);
+  will-change: transform;
+}
+
+.flying-wheel-modifier-symbol.mod-mini {
+  background: radial-gradient(circle at 35% 35%, #00e5ff 0%, #004d61 100%);
+  border-color: #e0f7fa;
+  box-shadow: 0 0 35px #00e5ff, 0 0 65px rgba(0, 229, 255, 0.85), 0 8px 25px rgba(0,0,0,0.8);
+  color: #ffffff;
+}
+
+.flying-wheel-modifier-symbol.mod-mega {
+  background: radial-gradient(circle at 35% 35%, #d946ef 0%, #4a0e4e 100%);
+  border-color: #fae8ff;
+  box-shadow: 0 0 35px #c040fd, 0 0 65px rgba(192, 64, 253, 0.85), 0 8px 25px rgba(0,0,0,0.8);
+  color: #ffffff;
+}
+
+.flying-wheel-modifier-symbol.mod-ultra {
+  background: radial-gradient(circle at 35% 35%, #fde047 0%, #854d0e 100%);
+  border-color: #ffffff;
+  box-shadow: 0 0 40px #ffd700, 0 0 80px rgba(255, 215, 0, 0.95), 0 8px 25px rgba(0,0,0,0.8);
+  color: #1a1200;
+}
+
+.flying-mod-icon {
+  font-size: 28px;
+  line-height: 1;
+  filter: drop-shadow(0 0 8px #ffffff);
+}
+
+.flying-mod-title {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.4px;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.flying-mod-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px;
+  font-weight: 900;
+  color: #ffeb3b;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.85);
+}
+
+.flying-wheel-modifier-symbol.mod-ultra .flying-mod-val {
+  color: #7f1d1d;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.7);
+}
+
+/* Pulsing Target Highlight on Chosen Empty Space */
+.wheel-target-cell {
+  border: 3px dashed #ffd700 !important;
+  background: rgba(255, 215, 0, 0.22) !important;
+  box-shadow: 0 0 30px #ffd700, inset 0 0 20px rgba(255, 215, 0, 0.5) !important;
+  animation: wheelTargetPulse 0.45s infinite alternate ease-in-out;
+}
+
+@keyframes wheelTargetPulse {
+  0% { transform: scale(0.96); box-shadow: 0 0 18px #ffd700, inset 0 0 12px rgba(255, 215, 0, 0.4); }
+  100% { transform: scale(1.05); box-shadow: 0 0 36px #00e5ff, inset 0 0 24px rgba(0, 229, 255, 0.6); }
+}
+
+/* 3D Flip / Morph into Cash Coin Animation */
+.morph-to-coin-anim {
+  animation: morphToCoinFlip 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes morphToCoinFlip {
+  0% {
+    transform: perspective(400px) rotateY(0deg) scale(1);
+    filter: brightness(1);
+  }
+  45% {
+    transform: perspective(400px) rotateY(90deg) scale(1.22);
+    filter: brightness(2.2);
+    box-shadow: 0 0 40px #ffd700;
+  }
+  55% {
+    transform: perspective(400px) rotateY(-90deg) scale(1.22);
+    filter: brightness(2.2);
+    box-shadow: 0 0 40px #ffd700;
+  }
+  100% {
+    transform: perspective(400px) rotateY(0deg) scale(1);
+    filter: brightness(1);
+  }
+}

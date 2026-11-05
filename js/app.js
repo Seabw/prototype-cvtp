@@ -1,11 +1,11 @@
-import { createBalanced955Config, SymbolType, WheelPrizeType } from './math/config.js?v=3.4.1';
-import { CashVortexSlotEngine } from './math/engine.js?v=3.4.1';
-import { SoundSynth } from './audio/soundSynth.js?v=3.4.1';
-import { VisualGrid } from './ui/visualGrid.js?v=3.4.1';
-import { FlyingCoins } from './ui/flyingCoins.js?v=3.4.1';
-import { WheelOverlay } from './ui/wheelOverlay.js?v=3.4.1';
-import { BonusView } from './ui/bonusView.js?v=3.4.1';
-import { DebugPanel } from './ui/debugPanel.js?v=3.4.1';
+import { createBalanced955Config, SymbolType, WheelPrizeType } from './math/config.js?v=3.5.0';
+import { CashVortexSlotEngine } from './math/engine.js?v=3.5.0';
+import { SoundSynth } from './audio/soundSynth.js?v=3.5.0';
+import { VisualGrid } from './ui/visualGrid.js?v=3.5.0';
+import { FlyingCoins } from './ui/flyingCoins.js?v=3.5.0';
+import { WheelOverlay } from './ui/wheelOverlay.js?v=3.5.0';
+import { BonusView } from './ui/bonusView.js?v=3.5.0';
+import { DebugPanel } from './ui/debugPanel.js?v=3.5.0';
 
 class CashVortexApp {
   constructor() {
@@ -325,13 +325,13 @@ class CashVortexApp {
       // Wait for drop & bounce animations to fully settle
       await new Promise(r => setTimeout(r, 650 * speedMult));
 
-      // Step 3: Natural Strikes Execution (On-reel special symbols fire powers)
+      // Step 3: Natural Strikes Execution (On-reel special symbols fire powers, then morph to Cash Coin)
       if (telemetry.strikeActions && telemetry.strikeActions.length > 0) {
         for (const strike of telemetry.strikeActions) {
           const tier = strike.strikeCell.type === SymbolType.MiniStrike ? 'MINI' : strike.strikeCell.type === SymbolType.MegaStrike ? 'MEGA' : 'ULTRA';
           const count = strike.affectedCells ? strike.affectedCells.length : 0;
           const strikeVal = (Number(strike.strikeCell?.value) || 0).toFixed(1);
-          this.setStatus(`⚡ ${tier} STRIKE FIRING! APPLYING +${strikeVal}x TO ${count} COINS...`);
+          this.setStatus(`⚡ ${tier} CASH STRIKE FIRING! APPLYING +${strikeVal}x TO ${count} COINS...`);
           await new Promise(r => setTimeout(r, 200 * speedMult));
           await this.visualGrid.animateStrikeFlyAndCountUp(
             strike,
@@ -339,18 +339,32 @@ class CashVortexApp {
             this.soundSynth,
             speedMult
           );
-          await new Promise(r => setTimeout(r, 350 * speedMult));
+          await new Promise(r => setTimeout(r, 200 * speedMult));
+          const sRow = strike.strikeCell.row;
+          const sCol = strike.strikeCell.col;
+          const sFinalVal =
+            telemetry.postReelActionGrid?.[sRow]?.[sCol]?.cashValue ??
+            (Number(strike.strikeCell?.value) || 0);
+          this.setStatus(`🪙 ${tier} CASH STRIKE TRANSFORMING INTO CASH COIN ($${(sFinalVal * this.bet).toFixed(2)})...`);
+          await this.visualGrid.animateMorphToCashCoin(
+            sRow,
+            sCol,
+            sFinalVal,
+            this.soundSynth,
+            speedMult
+          );
+          await new Promise(r => setTimeout(r, 200 * speedMult));
         }
       }
 
-      // Step 4: Natural Vortexes Execution (Coins fly in & vortex gathers)
+      // Step 4: Natural Vortexes Execution (Coins fly in & vortex gathers, then morphs to Cash Coin)
       if (telemetry.vortexActions && telemetry.vortexActions.length > 0) {
         for (const vortex of telemetry.vortexActions) {
           const tier = vortex.vortexCell.type === SymbolType.MiniVortex ? 'MINI' : vortex.vortexCell.type === SymbolType.MegaVortex ? 'MEGA' : 'ULTRA';
           const count = vortex.collectedCells ? vortex.collectedCells.length : 0;
           const basePay = (Number(vortex.vortexCell?.basePay) || 0).toFixed(1);
           const finalVal = (Number(vortex.finalValue) || 0).toFixed(1);
-          this.setStatus(`🌀 ${tier} VORTEX SUCTIONING ${count} COINS (BASE ${basePay}x ➔ ${finalVal}x)...`);
+          this.setStatus(`🌀 ${tier} CASH VORTEX SUCTIONING ${count} COINS (BASE ${basePay}x ➔ ${finalVal}x)...`);
           await new Promise(r => setTimeout(r, 200 * speedMult));
           await this.visualGrid.animateVortexSuctionAndCountUp(
             vortex,
@@ -358,7 +372,19 @@ class CashVortexApp {
             this.soundSynth,
             speedMult
           );
-          await new Promise(r => setTimeout(r, 400 * speedMult));
+          await new Promise(r => setTimeout(r, 250 * speedMult));
+          const vRow = vortex.vortexCell.row;
+          const vCol = vortex.vortexCell.col;
+          const vFinalNum = Number(vortex.finalValue) || 0;
+          this.setStatus(`🪙 ${tier} CASH VORTEX TRANSFORMING INTO CASH COIN ($${(vFinalNum * this.bet).toFixed(2)})...`);
+          await this.visualGrid.animateMorphToCashCoin(
+            vRow,
+            vCol,
+            vFinalNum,
+            this.soundSynth,
+            speedMult
+          );
+          await new Promise(r => setTimeout(r, 250 * speedMult));
         }
       }
 
@@ -393,16 +419,27 @@ class CashVortexApp {
         });
 
         const potElem = this.dom.potElements[potIdx - 1];
-        if (potElem) potElem.classList.remove('pot-pulse-hit');
-
         const prizeObj = telemetry.potWheelPrize.prize;
         const pName = prizeObj.prizeString;
 
-        // If Wheel awarded Cash Strike or Cash Vortex, it placed onto a random empty space
+        // If Wheel awarded Cash Strike or Cash Vortex, fly symbol from triggered Wheel Pot to chosen empty space,
+        // stay on that space while applying its power, then transform into a Cash Coin!
         if (telemetry.potWheelPrize.placedSymbol) {
           const sym = telemetry.potWheelPrize.placedSymbol;
-          this.setStatus(`🎯 WHEEL AWARDED ${pName}! PLACED ON EMPTY SPACE (${sym.row + 1}, ${sym.col + 1})`);
+          this.setStatus(
+            `🎯 ${wheelName.toUpperCase()} AWARDED ${pName}! FLYING TO EMPTY SPACE (${sym.row + 1}, ${sym.col + 1})...`
+          );
 
+          // 5a: Fly symbol from triggered Top Wheel Pot to target empty cell on the 5x5 grid
+          await this.visualGrid.animateWheelSymbolFlyToGrid(
+            potElem,
+            sym,
+            this.dom.coinFlightContainer,
+            this.soundSynth,
+            speedMult
+          );
+
+          // 5b: Place and display the Cash Strike / Cash Vortex symbol on the target cell before firing power
           if (telemetry.postReelActionGrid && telemetry.postReelActionGrid[sym.row]?.[sym.col]) {
             const pCell = telemetry.postReelActionGrid[sym.row][sym.col];
             pCell.type = sym.type;
@@ -413,51 +450,78 @@ class CashVortexApp {
           } else {
             this.visualGrid.render(this.engine.grid);
           }
-          this.soundSynth.playSpecialSymbolLand();
-          await new Promise(r => setTimeout(r, 450 * speedMult));
+          await new Promise(r => setTimeout(r, 550 * speedMult));
 
+          // 5c: Show animation of its power being applied across the reels
           if (telemetry.potWheelPrize.wheelStrikeAction) {
+            const affCount = telemetry.potWheelPrize.wheelStrikeAction.affectedCells?.length || 0;
+            this.setStatus(
+              `⚡ ${pName} ON (${sym.row + 1}, ${sym.col + 1}) FIRING POWER ONTO ${affCount} COINS!`
+            );
             await this.visualGrid.animateStrikeFlyAndCountUp(
               telemetry.potWheelPrize.wheelStrikeAction,
               this.dom.coinFlightContainer,
               this.soundSynth,
               speedMult
             );
-            await new Promise(r => setTimeout(r, 300 * speedMult));
+            await new Promise(r => setTimeout(r, 250 * speedMult));
           } else if (telemetry.potWheelPrize.wheelVortexAction) {
+            const colCount = telemetry.potWheelPrize.wheelVortexAction.collectedCells?.length || 0;
+            this.setStatus(
+              `🌀 ${pName} ON (${sym.row + 1}, ${sym.col + 1}) SUCTIONING ${colCount} COINS!`
+            );
             await this.visualGrid.animateVortexSuctionAndCountUp(
               telemetry.potWheelPrize.wheelVortexAction,
               this.dom.coinFlightContainer,
               this.soundSynth,
               speedMult
             );
-            await new Promise(r => setTimeout(r, 350 * speedMult));
+            await new Promise(r => setTimeout(r, 300 * speedMult));
           }
+
+          // 5d: Transform the Cash Strike / Cash Vortex into a Cash Coin on that cell
+          const finalCoinVal = sym.finalCashValue !== undefined ? sym.finalCashValue : sym.cashValue;
+          this.setStatus(
+            `🪙 ${pName} ON (${sym.row + 1}, ${sym.col + 1}) TRANSFORMING INTO CASH COIN ($${(finalCoinVal * this.bet).toFixed(2)})!`
+          );
+          await this.visualGrid.animateMorphToCashCoin(
+            sym.row,
+            sym.col,
+            finalCoinVal,
+            this.soundSynth,
+            speedMult
+          );
+          await new Promise(r => setTimeout(r, 300 * speedMult));
+
+          if (potElem) potElem.classList.remove('pot-pulse-hit');
           this.visualGrid.render(this.engine.grid);
-        } else if (prizeObj.type === WheelPrizeType.Multiplier) {
-          const affCount = telemetry.potWheelPrize.affectedCells ? telemetry.potWheelPrize.affectedCells.length : 0;
-          this.setStatus(`⚡ WHEEL AWARDED ${pName}! MULTIPLIED ${affCount} ACTIVE COINS ON REELS (JACKPOTS EXCLUDED)!`);
-          this.visualGrid.render(this.engine.grid);
-          if (telemetry.potWheelPrize.affectedCells) {
-            telemetry.potWheelPrize.affectedCells.forEach(t => {
-              this.visualGrid.highlightCell(t.row, t.col, 'strike-hit', 750);
-              this.visualGrid.highlightCell(t.row, t.col, 'val-countup-pop', 750);
-            });
-          }
-          this.soundSynth.playStrikeZap();
-          await new Promise(r => setTimeout(r, 650 * speedMult));
-        } else if (prizeObj.type === WheelPrizeType.Jackpot || prizeObj.type === WheelPrizeType.InstantCash) {
-          this.setStatus(`🏆 WHEEL AWARDED ${pName}! ADDED TO TOTAL SPIN WIN!`);
-          this.soundSynth.playJackpotFanfare();
-          this.visualGrid.render(this.engine.grid);
-          await new Promise(r => setTimeout(r, 600 * speedMult));
-        } else if (prizeObj.type === WheelPrizeType.LockAndSlingo) {
-          this.setStatus(`🎉 WHEEL AWARDED LOCK & SLINGO™ BONUS! WILL START AFTER WIN EVALUATIONS... 🎉`);
-          this.soundSynth.playWheelWin();
-          this.visualGrid.render(this.engine.grid);
-          await new Promise(r => setTimeout(r, 650 * speedMult));
         } else {
-          this.visualGrid.render(this.engine.grid);
+          if (potElem) potElem.classList.remove('pot-pulse-hit');
+          if (prizeObj.type === WheelPrizeType.Multiplier) {
+            const affCount = telemetry.potWheelPrize.affectedCells ? telemetry.potWheelPrize.affectedCells.length : 0;
+            this.setStatus(`⚡ ${wheelName.toUpperCase()} AWARDED ${pName}! MULTIPLIED ${affCount} ACTIVE COINS ON REELS (JACKPOTS EXCLUDED)!`);
+            this.visualGrid.render(this.engine.grid);
+            if (telemetry.potWheelPrize.affectedCells) {
+              telemetry.potWheelPrize.affectedCells.forEach(t => {
+                this.visualGrid.highlightCell(t.row, t.col, 'strike-hit', 750);
+                this.visualGrid.highlightCell(t.row, t.col, 'val-countup-pop', 750);
+              });
+            }
+            this.soundSynth.playStrikeZap();
+            await new Promise(r => setTimeout(r, 650 * speedMult));
+          } else if (prizeObj.type === WheelPrizeType.Jackpot || prizeObj.type === WheelPrizeType.InstantCash) {
+            this.setStatus(`🏆 ${wheelName.toUpperCase()} AWARDED ${pName}! ADDED TO TOTAL SPIN WIN!`);
+            this.soundSynth.playJackpotFanfare();
+            this.visualGrid.render(this.engine.grid);
+            await new Promise(r => setTimeout(r, 600 * speedMult));
+          } else if (prizeObj.type === WheelPrizeType.LockAndSlingo) {
+            this.setStatus(`🎉 ${wheelName.toUpperCase()} AWARDED LOCK & SLINGO™ BONUS! WILL START AFTER WIN EVALUATIONS... 🎉`);
+            this.soundSynth.playWheelWin();
+            this.visualGrid.render(this.engine.grid);
+            await new Promise(r => setTimeout(r, 650 * speedMult));
+          } else {
+            this.visualGrid.render(this.engine.grid);
+          }
         }
       }
 

@@ -1,4 +1,4 @@
-import { SymbolType, SLINGO_LINES } from '../math/config.js?v=3.4.0';
+import { SymbolType, SLINGO_LINES } from '../math/config.js?v=3.5.0';
 
 export class VisualGrid {
   constructor(gridElement, svgLinesElement) {
@@ -584,5 +584,133 @@ export class VisualGrid {
         }
       }
     }
+  }
+
+  /**
+   * Animates a Wheel-awarded Cash Strike or Cash Vortex symbol flying directly
+   * from the specific triggered Top Wheel Pot (#pot-1, #pot-2, or #pot-3) above the reels
+   * down into the randomly chosen empty space (row, col) on the 5x5 grid.
+   */
+  async animateWheelSymbolFlyToGrid(potElement, placedSymbol, containerElement, soundSynth, speedMult = 1.0) {
+    if (!placedSymbol || !containerElement) return;
+    const targetElem = this.cellElements[placedSymbol.row]?.[placedSymbol.col];
+    if (!targetElem) return;
+
+    // Highlight the chosen empty cell so the player sees where it is heading
+    targetElem.classList.add('wheel-target-cell');
+
+    const startRect = potElement
+      ? potElement.getBoundingClientRect()
+      : this.gridElement.getBoundingClientRect();
+    const endRect = targetElem.getBoundingClientRect();
+
+    const startX = startRect.left + startRect.width / 2;
+    const startY = startRect.top + startRect.height / 2;
+    const endX = endRect.left + endRect.width / 2;
+    const endY = endRect.top + endRect.height / 2;
+
+    const isStrike =
+      placedSymbol.type === SymbolType.MiniStrike ||
+      placedSymbol.type === SymbolType.MegaStrike ||
+      placedSymbol.type === SymbolType.UltraStrike;
+
+    const tier =
+      placedSymbol.type === SymbolType.MiniStrike || placedSymbol.type === SymbolType.MiniVortex
+        ? 'mini'
+        : placedSymbol.type === SymbolType.MegaStrike || placedSymbol.type === SymbolType.MegaVortex
+        ? 'mega'
+        : 'ultra';
+
+    const tierLabel = tier.toUpperCase();
+    const modKind = isStrike ? 'CASH STRIKE' : 'CASH VORTEX';
+    const icon = isStrike ? '⚡' : '🌀';
+    const baseVal = Number(placedSymbol.basePay !== undefined ? placedSymbol.basePay : placedSymbol.cashValue) || 1.0;
+
+    const flyingEl = document.createElement('div');
+    flyingEl.className = `flying-wheel-modifier-symbol mod-${tier}`;
+    flyingEl.innerHTML = `
+      <div class="flying-mod-icon">${icon}</div>
+      <div class="flying-mod-title">${tierLabel}<br/>${modKind}</div>
+      <div class="flying-mod-val">+${baseVal.toFixed(1)}x</div>
+    `;
+    flyingEl.style.transform = `translate3d(${startX}px, ${startY}px, 0) translate(-50%, -50%) scale(1.15)`;
+    containerElement.appendChild(flyingEl);
+
+    if (soundSynth) soundSynth.playSpecialSymbolLand();
+
+    // Pause briefly at the triggered wheel pot so the player sees it spawn from that pot
+    await new Promise(r => setTimeout(r, Math.max(180, 320 * speedMult)));
+
+    const flightDuration = Math.max(380, 880 * speedMult);
+    const startTime = performance.now();
+    const ctrlX = (startX + endX) / 2 + (endX >= startX ? 45 : -45);
+    const ctrlY = Math.min(startY, endY) - 55;
+
+    await new Promise(resolve => {
+      const safetyTimer = setTimeout(resolve, flightDuration + 500);
+      const step = now => {
+        try {
+          const elapsed = (now || performance.now()) - startTime;
+          const t = Math.min(1, Math.max(0, elapsed / flightDuration));
+          // Smooth ease-in-out
+          const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+          const x = Math.pow(1 - ease, 2) * startX + 2 * (1 - ease) * ease * ctrlX + Math.pow(ease, 2) * endX;
+          const y = Math.pow(1 - ease, 2) * startY + 2 * (1 - ease) * ease * ctrlY + Math.pow(ease, 2) * endY;
+          const scale = 1.15 + Math.sin(ease * Math.PI) * 0.25 - ease * 0.15;
+
+          flyingEl.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%) scale(${scale})`;
+
+          if (t < 1) {
+            requestAnimationFrame(step);
+          } else {
+            clearTimeout(safetyTimer);
+            resolve();
+          }
+        } catch (e) {
+          clearTimeout(safetyTimer);
+          resolve();
+        }
+      };
+      requestAnimationFrame(step);
+    });
+
+    flyingEl.remove();
+    targetElem.classList.remove('wheel-target-cell');
+  }
+
+  /**
+   * Animates a Cash Strike or Cash Vortex cell transforming (3D flip) into a Cash Coin
+   * on the grid after its modifier power has finished applying.
+   */
+  async animateMorphToCashCoin(row, col, finalCashValue, soundSynth, speedMult = 1.0) {
+    const cellElem = this.cellElements[row]?.[col];
+    if (!cellElem) return;
+
+    const duration = Math.max(300, 650 * speedMult);
+    cellElem.style.animationDuration = `${duration}ms`;
+    cellElem.classList.add('morph-to-coin-anim');
+
+    // Halfway through the 3D flip (at 90deg), swap the symbol visuals to a Cash Coin
+    await new Promise(r => setTimeout(r, duration * 0.48));
+
+    cellElem.className = 'grid-cell symbol-cash-coin morph-to-coin-anim';
+    const inner = cellElem.querySelector('.cell-inner');
+    if (inner) {
+      const val = Number(finalCashValue) || 0;
+      const dots = Array.from({ length: 3 }, (_, i) =>
+        `<span class="life-dot ${i < 3 ? 'active' : ''}"></span>`
+      ).join('');
+      inner.innerHTML = `
+        <div class="life-badge life-3"><span class="life-num">3</span><div class="life-dots">${dots}</div></div>
+        <div class="coin-disc"><span class="coin-symbol">$</span></div>
+        <div class="coin-value">${val.toFixed(1)}x</div>
+      `;
+    }
+    if (soundSynth) soundSynth.playCoinLand();
+
+    await new Promise(r => setTimeout(r, duration * 0.52));
+    cellElem.classList.remove('morph-to-coin-anim');
+    cellElem.style.animationDuration = '';
   }
 }

@@ -78,10 +78,14 @@ export class WheelOverlay {
           requestAnimationFrame(renderFrame);
         } else {
           if (this.soundSynth) this.soundSynth.playWheelWin();
+          const wonLabel = slices[validTargetIndex]?.prizeString || slices[validTargetIndex]?.label || '';
+          if (wonLabel) {
+            this.titleElement.innerText = `${(wheelName || 'PRIZE WHEEL').toUpperCase()} — ${wonLabel.toUpperCase()}!`;
+          }
           setTimeout(() => {
             if (typeof clearTimeout !== 'undefined') clearTimeout(safetyTimer);
             finish();
-          }, 1200);
+          }, 1400);
         }
       } catch (e) {
         if (typeof clearTimeout !== 'undefined') clearTimeout(safetyTimer);
@@ -93,13 +97,50 @@ export class WheelOverlay {
     requestAnimationFrame(renderFrame);
   }
 
+  formatSliceLines(rawLabel) {
+    const s = (rawLabel || '').trim();
+    const lower = s.toLowerCase();
+
+    if (lower.includes('strike')) {
+      const m = s.match(/([+-]?\d+(\.\d+)?)/);
+      const valStr = m ? `+${parseFloat(m[1]).toFixed(1)}x` : '+1.0x';
+      if (lower.includes('mini')) return ['MINI CASH STRIKE', valStr];
+      if (lower.includes('mega')) return ['MEGA CASH STRIKE', valStr];
+      return ['ULTRA CASH STRIKE', valStr];
+    }
+    if (lower.includes('vortex')) {
+      const m = s.match(/([+-]?\d+(\.\d+)?)/);
+      const valStr = m ? `+${parseFloat(m[1]).toFixed(1)}x` : '+1.0x';
+      if (lower.includes('mini')) return ['MINI CASH VORTEX', valStr];
+      if (lower.includes('mega')) return ['MEGA CASH VORTEX', valStr];
+      return ['ULTRA CASH VORTEX', valStr];
+    }
+    if (lower.includes('multiplier') || lower.startsWith('x')) {
+      const m = s.match(/\d+(\.\d+)?/);
+      const multStr = m ? `x${m[0]}` : s.toUpperCase();
+      return ['MULTIPLIER', multStr];
+    }
+    if (lower.includes('jackpot')) {
+      if (lower.includes('mini')) return ['MINI JACKPOT', '5x BET'];
+      if (lower.includes('mega')) return ['MEGA JACKPOT', '50x BET'];
+      return ['ULTRA JACKPOT', '500x BET'];
+    }
+    if (lower.includes('lock') || lower.includes('slingo')) {
+      return ['LOCK & SLINGO', 'BONUS'];
+    }
+    if (!isNaN(parseFloat(s))) {
+      return ['INSTANT CASH', `${s}x BET`];
+    }
+    return [s.toUpperCase(), ''];
+  }
+
   drawWheel(slices, angle, targetIndex, isFinal) {
     const ctx = this.ctx;
     const width = this.canvas.width;
     const height = this.canvas.height;
     const centerX = width / 2;
     const centerY = height / 2;
-    const radius = width / 2 - 20;
+    const radius = width / 2 - 18;
     const sliceCount = slices.length;
     const sliceAngle = (2 * Math.PI) / sliceCount;
 
@@ -115,6 +156,7 @@ export class WheelOverlay {
       '#33271b', '#261a33'
     ];
 
+    // Pass 1: Draw all slice backgrounds & borders
     for (let i = 0; i < sliceCount; i++) {
       const sliceStart = i * sliceAngle;
       const sliceEnd = sliceStart + sliceAngle;
@@ -134,31 +176,39 @@ export class WheelOverlay {
       ctx.strokeStyle = '#e6c875';
       ctx.lineWidth = 2.5;
       ctx.stroke();
+    }
 
+    // Pass 2: Draw 2-line slice labels in the wide outer half of each slice
+    const textCenterRadius = radius * 0.61;
+    for (let i = 0; i < sliceCount; i++) {
+      const sliceStart = i * sliceAngle;
       ctx.save();
       ctx.rotate(sliceStart + sliceAngle / 2);
-      ctx.textAlign = 'right';
+      ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
 
       const prize = slices[i] || {};
-      let label = prize.prizeString || prize.label || '';
+      const rawLabel = prize.prizeString || prize.label || '';
+      const [line1, line2] = this.formatSliceLines(rawLabel);
 
-      let fontSize = 18;
-      if (label.length > 18) fontSize = 11.5;
-      else if (label.length > 15) fontSize = 13;
-      else if (label.length > 11) fontSize = 15;
+      const isWon = isFinal && i === targetIndex;
+      ctx.shadowColor = isWon ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.9)';
+      ctx.shadowBlur = isWon ? 2 : 4;
 
-      if (isFinal && i === targetIndex) {
-        ctx.fillStyle = '#0f1026';
-        ctx.font = `bold ${fontSize + 1.5}px Outfit, sans-serif`;
+      if (line2) {
+        ctx.fillStyle = isWon ? '#0f1026' : '#ffffff';
+        ctx.font = `800 ${isWon ? 12.5 : 11.5}px Outfit, sans-serif`;
+        ctx.fillText(line1, textCenterRadius, -8);
+
+        ctx.fillStyle = isWon ? '#8b0000' : '#ffeb3b';
+        ctx.font = `900 ${isWon ? 15 : 13.5}px "JetBrains Mono", Outfit, sans-serif`;
+        ctx.fillText(line2, textCenterRadius, 9);
       } else {
-        ctx.fillStyle = '#ffffff';
-        ctx.font = `bold ${fontSize}px Outfit, sans-serif`;
+        ctx.fillStyle = isWon ? '#0f1026' : '#ffffff';
+        ctx.font = `800 ${isWon ? 14 : 13}px Outfit, sans-serif`;
+        ctx.fillText(line1, textCenterRadius, 0);
       }
 
-      ctx.shadowColor = 'rgba(0,0,0,0.8)';
-      ctx.shadowBlur = 4;
-      ctx.fillText(label, radius - 18, 0);
       ctx.restore();
     }
 
